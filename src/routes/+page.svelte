@@ -1,8 +1,3 @@
-<script lang="ts" module>
-  // Module-level so coming back from /results doesn't ask again; a full reload does.
-  let started = $state(false);
-</script>
-
 <script lang="ts">
   import { useConvexClient, useQuery } from 'convex-svelte';
   import { api } from '../../convex/_generated/api';
@@ -25,6 +20,8 @@
   const client = useConvexClient();
   const me = voterId();
 
+  // Skip the start button if the music is already going, e.g. arriving via "Keep voting".
+  let started = $state(sound.unlocked);
   let pair = $state<Poster[] | null>(null);
   let phase = $state<Phase>('loading');
   let chosen = $state<number | null>(null);

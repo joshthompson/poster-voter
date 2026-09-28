@@ -31,6 +31,8 @@ function readMuted() {
 
 class Sound {
   muted = $state(readMuted());
+  /** True once `unlock()` has run, i.e. the visitor has clicked or pressed a key. */
+  unlocked = $state(false);
 
   private ctx: AudioContext | null = null;
   private music!: GainNode;
@@ -43,6 +45,7 @@ class Sound {
 
   /** Create the audio graph and start the loop. Call from a user gesture. */
   unlock() {
+    this.unlocked = true;
     if (this.ctx) {
       if (!this.muted && document.visibilityState === 'visible') this.ctx.resume();
       return;
