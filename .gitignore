@@ -1,0 +1,15 @@
+node_modules
+/.svelte-kit
+/build
+.DS_Store
+
+# Env files hold credentials
+.env*
+!.env.example
+
+# Original (full-size) poster files; optimised copies live in static/posters
+/posters/*
+!/posters/titles.json
+
+# Local anonymous Convex backend state
+/.convex

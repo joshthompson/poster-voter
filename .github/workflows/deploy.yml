@@ -1,0 +1,47 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Deploys Convex functions to production, then builds the site with
+      # PUBLIC_CONVEX_URL pointing at that deployment. Runs `vite build` rather
+      # than `pnpm build`: the original posters are gitignored, so CI uses the
+      # optimised copies already committed in static/posters.
+      - name: Deploy Convex and build site
+        run: pnpm exec convex deploy --cmd-url-env-var-name PUBLIC_CONVEX_URL --cmd "pnpm exec vite build"
+        env:
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+          BASE_PATH: ${{ vars.BASE_PATH || format('/{0}', github.event.repository.name) }}
+
+      - run: touch build/.nojekyll
+
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
+          branch: gh-pages
