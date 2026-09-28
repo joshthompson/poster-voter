@@ -10,7 +10,7 @@
   import CountUp from '$lib/CountUp.svelte';
   import Logo from '$lib/Logo.svelte';
   import { sound } from '$lib/sound.svelte';
-  import { placeholderSrc, posterSrc, preload, voterId } from '$lib/util';
+  import { posterSrc, preload, voterId } from '$lib/util';
 
   type Poster = { _id: Id<'posters'>; title: string; image: string };
   type Phase = 'loading' | 'enter' | 'choose' | 'reveal' | 'exit';
@@ -202,7 +202,6 @@
                   src={posterSrc(poster.image)}
                   alt={poster.title}
                   draggable="false"
-                  onerror={(e) => ((e.currentTarget as HTMLImageElement).src = placeholderSrc())}
                 />
                 {#if result}
                   <div class="bar"><i style="width: {result.pct[i]}%"></i></div>

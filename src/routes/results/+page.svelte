@@ -6,7 +6,7 @@
   import { resolve } from '$app/paths';
   import { api } from '../../../convex/_generated/api';
   import CountUp from '$lib/CountUp.svelte';
-  import { placeholderSrc, posterSrc } from '$lib/util';
+  import { posterSrc } from '$lib/util';
 
   const overview = useQuery(api.results.overview, {});
 
@@ -22,7 +22,6 @@
     data && data.stats.possiblePairs ? (data.stats.pairsSeen / data.stats.possiblePairs) * 100 : 0
   );
 
-  const fallback = (e: Event) => ((e.currentTarget as HTMLImageElement).src = placeholderSrc());
   const pct = (n: number) => `${Math.round(n * 100)}%`;
 </script>
 
@@ -75,7 +74,7 @@
         {#each podium as p (p._id)}
           <div class="place place-{p.rank}" style="--i:{p.rank}">
             <div class="thumb">
-              <img src={posterSrc(p.image)} alt={p.title} onerror={fallback} />
+              <img src={posterSrc(p.image)} alt={p.title} />
               <span class="medal">{p.rank}</span>
             </div>
             <div class="label legible">
@@ -99,9 +98,9 @@
                 <span>{h.blurb}</span>
               </header>
               <div class="duel">
-                <img src={posterSrc(h.pair.a.image)} alt={h.pair.a.title} onerror={fallback} />
+                <img src={posterSrc(h.pair.a.image)} alt={h.pair.a.title} />
                 <span class="vs">vs</span>
-                <img src={posterSrc(h.pair.b.image)} alt={h.pair.b.title} onerror={fallback} />
+                <img src={posterSrc(h.pair.b.image)} alt={h.pair.b.title} />
               </div>
               <div class="split">
                 <i style="flex: {h.pair.a.votes || 0.0001}"></i>
@@ -126,7 +125,7 @@
             in:fly={{ y: 24, duration: 500, delay: Math.min(i, 20) * 35, easing: backOut }}
           >
             <span class="rank">{p.rank}</span>
-            <img src={posterSrc(p.image)} alt="" loading="lazy" onerror={fallback} />
+            <img src={posterSrc(p.image)} alt="" loading="lazy" />
             <div class="info">
               <strong>{p.title}</strong>
               <div class="meter">

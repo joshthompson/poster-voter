@@ -8,8 +8,6 @@ export function posterSrc(image: string) {
   return asset(`/${image}` as AssetPath);
 }
 
-export const placeholderSrc = () => asset('/placeholder.png' as AssetPath);
-
 /** Anonymous id so we can count distinct voters. */
 export function voterId() {
   const KEY = 'poster-voter:id';
