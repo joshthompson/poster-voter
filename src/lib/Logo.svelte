@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { glyphFor } from './glyphs';
 
   // Text (default "POSTER VOTER!") spelled out in hand-drawn pixel letters from ./assets/chars.
   // Each letter drifts gently on its own path. Positions are snapped to whole device pixels
@@ -8,21 +9,12 @@
 
   let { text = 'POSTER VOTER!', px }: { text?: string; px?: number } = $props();
 
-  const files = import.meta.glob('./assets/chars/*.png', {
-    eager: true,
-    query: '?url',
-    import: 'default'
-  }) as Record<string, string>;
-
-  const glyphs: Record<string, string> = Object.fromEntries(
-    Object.entries(files).map(([path, url]) => [path.split('/').pop()!.replace('.png', ''), url])
-  );
-
   // The text is fixed for the component's lifetime, so only its initial value is needed.
   const letters = $state(
     // svelte-ignore state_referenced_locally
     text.split('').map((char) => ({
-      src: glyphs[char.toLowerCase()],
+      char,
+      src: glyphFor(char),
       size: { w: 0, h: 0 }
     }))
   );
@@ -87,13 +79,14 @@
   });
 </script>
 
-<span class="logo" bind:this={logo} aria-hidden="true" style={px ? `--px: ${px}` : undefined}>
+<span class="logo" bind:this={logo} role="img" aria-label={text} style={px ? `--px: ${px}` : undefined}>
   {#each letters as l, i}
     {#if l.src}
       <img
         bind:this={imgs[i]}
         src={l.src}
-        alt=""
+        alt={l.char}
+        aria-hidden="true"
         draggable="false"
         bind:naturalWidth={l.size.w}
         bind:naturalHeight={l.size.h}

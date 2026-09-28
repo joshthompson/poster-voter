@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-// Optimise every image in ./posters into ./static/posters (as JPEG) and register them in Convex.
+// Optimise every image in ./posters into ./static/posters/<slug> (as JPEG) and register them in Convex
+// as the posters of the competition in posters/competition.json ({ "slug": "…", "title": "…" }).
+// That competition becomes the active one; any other is archived, with its images left in place.
 //
 //   pnpm posters:sync        → dev deployment
 //   pnpm posters:sync:prod   → production deployment (uses CONVEX_DEPLOY_KEY from .env.production)
@@ -17,7 +19,12 @@ import os from 'node:os';
 const run = promisify(execFile);
 const root = path.resolve(import.meta.dirname, '..');
 const SRC = path.join(root, 'posters');
-const OUT = path.join(root, 'static', 'posters');
+const competition = JSON.parse(await fs.readFile(path.join(SRC, 'competition.json'), 'utf8'));
+if (!/^[a-z0-9-]+$/.test(competition.slug ?? '') || !competition.title) {
+  console.error('posters/competition.json needs a "slug" (a-z, 0-9, -) and a "title"');
+  process.exit(1);
+}
+const OUT = path.join(root, 'static', 'posters', competition.slug);
 const MAX_SIZE = 1200;
 const IMAGE = /\.(heic|heif|jpe?g|png|webp|avif)$/i;
 const WEB_SAFE = /\.(jpe?g|png|webp|avif)$/i;
@@ -115,11 +122,16 @@ const titles = await readTitles();
 const posters = converted.map(({ file, outName }) => ({
   key: file,
   title: titles[file] ?? prettify(file),
-  image: `posters/${outName}`
+  image: `posters/${competition.slug}/${outName}`
 }));
 
-console.log(`Syncing to Convex (${prod ? 'prod' : 'dev'})…`);
-const args = ['convex', 'run', 'posters:sync', JSON.stringify({ posters })];
+console.log(`Syncing “${competition.title}” to Convex (${prod ? 'prod' : 'dev'})…`);
+const args = [
+  'convex',
+  'run',
+  'posters:sync',
+  JSON.stringify({ competition: { slug: competition.slug, title: competition.title }, posters })
+];
 if (prod) args.push('--prod');
 const { stdout } = await run('npx', args, { cwd: root, maxBuffer: 10 * 1024 * 1024 });
 console.log(stdout.trim());

@@ -23,6 +23,17 @@ export function voterId() {
   }
 }
 
+/** Forget everything this site keeps in localStorage (voter id, designer answer, seen posters, mute). */
+export function clearStorage() {
+  try {
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith('poster-voter:'))
+      .forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // Nothing stored; fine.
+  }
+}
+
 export function preload(src: string) {
   return new Promise<void>((resolve) => {
     const img = new Image();

@@ -4,6 +4,7 @@
   import { page } from '$app/state';
   import { resolve } from '$app/paths';
   import Logo from '$lib/Logo.svelte';
+  import Menu from '$lib/Menu.svelte';
   import PolkaDots from '$lib/PolkaDots.svelte';
   import { sound } from '$lib/sound.svelte';
   import '../app.css';
@@ -13,7 +14,7 @@
   const configured = Boolean(PUBLIC_CONVEX_URL);
   if (configured) setupConvex(PUBLIC_CONVEX_URL);
 
-  const onResults = $derived(page.route.id === '/results');
+  const onResults = $derived(page.route.id?.startsWith('/results'));
 </script>
 
 <svelte:window onpointerdown={() => sound.unlock()} onkeydown={() => sound.unlock()} />
@@ -52,6 +53,7 @@
     {:else}
       <a class="pill" href={resolve('/results')}>Rankings →</a>
     {/if}
+    {#if configured}<Menu />{/if}
   </nav>
 </header>
 
@@ -115,6 +117,9 @@
   nav {
     grid-column: 3;
     justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
   @media (max-width: 560px) {
     header {

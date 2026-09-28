@@ -24,12 +24,23 @@ Then open the URL Vite prints.
 
 See `.env.example`. Both files are gitignored.
 
-## Posters
+## Competitions and posters
+
+Posters are voted on within a competition. One competition is active at a time. Past competitions are archived: their results stay at `/results/<slug>`, which is linked from the burger menu.
+
+`posters/` holds the active competition. `posters/competition.json` names it:
+
+```json
+{ "slug": "stockholm-2026-09", "title": "Stockholm - September 2026" }
+```
 
 Put images (JPEG, PNG, WebP, or HEIC on macOS) in `posters/`, then run `pnpm posters:sync`. The script:
 
-1. converts and resizes each image into `static/posters/` using macOS `sips`
-2. upserts each poster in Convex, keyed by filename; posters whose files have been removed are deactivated, and their votes are kept
+1. converts and resizes each image into `static/posters/<slug>/` using macOS `sips`
+2. makes that competition the active one and archives any other
+3. upserts each poster in the competition, keyed by filename; posters whose files have been removed are deactivated, and their votes are kept
+
+To start a new competition, give `competition.json` a new slug and title, replace the images and `titles.json`, and sync. The old competition's images stay in `static/posters/<old slug>/` for its archive.
 
 Titles default to the filename (`001.jpg` becomes "No. 1"). To set your own, add them to `posters/titles.json`:
 
@@ -37,7 +48,7 @@ Titles default to the filename (`001.jpg` becomes "No. 1"). To set your own, add
 { "001.jpg": "Bo Kaspers Orkester" }
 ```
 
-`posters/` holds the originals and is gitignored. Commit `static/posters/`, which holds the optimised copies.
+`posters/` holds the originals and is gitignored, apart from `competition.json` and `titles.json`. Commit `static/posters/`, which holds the optimised copies.
 
 ## Scripts
 

@@ -4,13 +4,37 @@
   import { fly } from 'svelte/transition';
   import { backOut } from 'svelte/easing';
   import { resolve } from '$app/paths';
-  import { api } from '../../../convex/_generated/api';
+  import { page } from '$app/state';
+  import { api } from '../../../../convex/_generated/api';
   import CountUp from '$lib/CountUp.svelte';
+  import PixelText from '$lib/PixelText.svelte';
   import { posterSrc } from '$lib/util';
 
-  const overview = useQuery(api.results.overview, {});
+  type View = 'all' | 'designers' | 'others' | 'disagree';
+  const VIEWS: { id: View; label: string }[] = [
+    { id: 'all', label: 'Everyone' },
+    { id: 'designers', label: 'Designers' },
+    { id: 'others', label: 'Non-designers' },
+    { id: 'disagree', label: 'Biggest disagreements' }
+  ];
+  let view = $state<View>('all');
+
+  // /results is the active competition; /results/<slug> is any competition, usually an archived one.
+  const slug = $derived(page.params.competition);
+
+  const overview = useQuery(
+    api.results.overview,
+    () => (view === 'disagree' ? 'skip' : { segment: view, competition: slug }),
+    { keepPreviousData: true }
+  );
+  const split = useQuery(api.results.disagreements, () =>
+    view === 'disagree' ? { competition: slug } : 'skip'
+  );
 
   const data = $derived(overview.data);
+  const competition = $derived(view === 'disagree' ? split.data?.competition : data?.competition);
+  const archived = $derived(competition?.active === false);
+  const missing = $derived(view === 'disagree' ? split.data === null : overview.data === null);
   const podium = $derived(data ? [data.posters[1], data.posters[0], data.posters[2]].filter(Boolean) : []);
   const ratingRange = $derived.by(() => {
     if (!data?.posters.length) return { min: 0, span: 1 };
@@ -23,25 +47,38 @@
   );
 
   const pct = (n: number) => `${Math.round(n * 100)}%`;
+  const who = $derived(view === 'designers' ? ' by designers' : view === 'others' ? ' by non-designers' : '');
+  const gapLabel = (gap: number) => `${Math.round(Math.abs(gap) * 100)} pts`;
 </script>
 
 <svelte:head>
-  <title>Rankings · Poster Voter</title>
+  <title>{competition ? `${competition.title} · ` : ''}Rankings · Poster Voter</title>
 </svelte:head>
 
 <div class="page">
   <section class="hero">
     <h1>
-      <span class="w" style="--i:0">The</span>
-      <span class="w accent" style="--i:1">Rankings</span>
+      <span class="w" style="--i:0"><PixelText text="The" color="var(--ink)" /></span>
+      <span class="w" style="--i:1"><PixelText text="Rankings" color="var(--red)" /></span>
     </h1>
     <svg class="squiggle" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true">
       <path d="M2 12 Q 20 2, 40 12 T 80 12 T 120 12 T 160 12 T 200 12 T 240 12 T 280 12 T 298 10" />
     </svg>
+    {#if competition}
+      <p class="competition">
+        <span class="legible">{competition.title}{archived ? ' · Archived' : ''}</span>
+      </p>
+    {/if}
     <p class="sub">
       <span class="legible">
-        {#if data}
-          Live from {data.stats.totalVotes.toLocaleString()} head-to-heads. Updates as people vote.
+        {#if missing}
+          {slug ? 'There’s no competition here.' : 'No competition is running yet.'}
+        {:else if view === 'disagree'}
+          Where designers and everyone else part ways.
+        {:else if data && archived}
+          Final results from {data.stats.totalVotes.toLocaleString()} head-to-heads{who}.
+        {:else if data}
+          Live from {data.stats.totalVotes.toLocaleString()} head-to-heads{who}. Updates as people vote.
         {:else}
           Tallying the dots…
         {/if}
@@ -49,7 +86,65 @@
     </p>
   </section>
 
-  {#if overview.error}
+  {#if !missing}
+    <nav class="filters" aria-label="Whose votes to show">
+      {#each VIEWS as v}
+        <button class:active={view === v.id} aria-pressed={view === v.id} onclick={() => (view = v.id)}>
+          {v.label}
+        </button>
+      {/each}
+    </nav>
+  {/if}
+
+  {#if missing}
+    <p class="empty">
+      <span class="legible"><a href={resolve('/results')}>See the current rankings</a>.</span>
+    </p>
+  {:else if view === 'disagree'}
+    {#if split.error}
+      <p class="empty"><span class="legible">Couldn’t load results: {split.error.message}</span></p>
+    {:else if !split.data}
+      <div class="loader" aria-label="Loading"><i></i><i></i><i></i></div>
+    {:else if !split.data.posters.length}
+      <p class="empty">
+        <span class="legible">
+          Not enough to compare yet: each poster needs {split.data.minMatches} match-ups from designers and from
+          non-designers. So far: {split.data.designerVotes.toLocaleString()} designer votes,
+          {split.data.otherVotes.toLocaleString()} non-designer votes.
+        </span>
+      </p>
+    {:else}
+      <section class="board">
+        <h2><span class="legible">Designers vs everyone else</span></h2>
+        <p class="note">
+          <span class="legible">How often each poster wins with each group, biggest gap first.</span>
+        </p>
+        <ol>
+          {#each split.data.posters as p, i (p._id)}
+            <li class="gap-row" in:fly={{ y: 24, duration: 500, delay: Math.min(i, 20) * 35, easing: backOut }}>
+              <span class="rank">{i + 1}</span>
+              <img src={posterSrc(p.image)} alt="" loading="lazy" />
+              <div class="info">
+                <strong>{p.title}</strong>
+                <div class="versus">
+                  <span class="who">Designers</span>
+                  <div class="meter designers"><i style="width: {Math.max(2, p.designers.winRate * 100)}%"></i></div>
+                  <span class="val">{pct(p.designers.winRate)} · #{p.designers.rank}</span>
+                  <span class="who">Others</span>
+                  <div class="meter others"><i style="width: {Math.max(2, p.others.winRate * 100)}%"></i></div>
+                  <span class="val">{pct(p.others.winRate)} · #{p.others.rank}</span>
+                </div>
+              </div>
+              <div class="nums">
+                <span class="rating">{gapLabel(p.gap)}</span>
+                <span class="record">{p.gap > 0 ? 'designers love it' : 'designers aren’t sold'}</span>
+              </div>
+            </li>
+          {/each}
+        </ol>
+      </section>
+    {/if}
+  {:else if overview.error}
     <p class="empty"><span class="legible">Couldn’t load results: {overview.error.message}</span></p>
   {:else if data}
     <section class="stats">
@@ -61,14 +156,24 @@
         { label: 'Match-ups explored', value: coverage, decimals: coverage < 10 ? 1 : 0, suffix: '%' }
       ] as stat, i}
         <div class="stat" style="--i:{i}">
-          <strong><CountUp value={stat.value} decimals={stat.decimals ?? 0} suffix={stat.suffix ?? ''} /></strong>
+          <strong><CountUp value={stat.value} decimals={stat.decimals ?? 0} suffix={stat.suffix ?? ''} pixel /></strong>
           <span>{stat.label}</span>
         </div>
       {/each}
     </section>
 
     {#if data.stats.totalVotes === 0}
-      <p class="empty"><span class="legible">No votes yet — <a href={resolve('/')}>go cast the first one</a>.</span></p>
+      <p class="empty">
+        <span class="legible">
+          {#if archived}
+            No votes were cast{who}.
+          {:else if view === 'all'}
+            No votes yet — <a href={resolve('/')}>go cast the first one</a>.
+          {:else}
+            No votes{who} yet.
+          {/if}
+        </span>
+      </p>
     {:else}
       <section class="podium" aria-label="Top three">
         {#each podium as p (p._id)}
@@ -158,19 +263,25 @@
     margin-bottom: clamp(32px, 6vw, 64px);
   }
   h1 {
+    /* Pixel letters: 4 screen px per art px, 2 on phones. */
+    --text-px: 4;
+    --text-px-sm: 2;
     margin: 0;
-    font-size: clamp(52px, 11vw, 132px);
-    font-weight: 800;
-    letter-spacing: -0.06em;
-    line-height: 0.9;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 0 32px;
+  }
+  @media (max-width: 560px) {
+    h1 {
+      gap: 0 16px;
+    }
   }
   .w {
     display: inline-block;
     animation: rise 0.9s var(--spring) both;
     animation-delay: calc(var(--i) * 0.12s);
-  }
-  .accent {
-    color: var(--red);
   }
   .squiggle {
     display: block;
@@ -192,6 +303,16 @@
       stroke-dashoffset: 0;
     }
   }
+  .competition {
+    margin: 18px 0 0;
+    line-height: 2;
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    animation: rise 0.8s var(--smooth) 0.25s both;
+  }
   .sub {
     line-height: 2;
     color: var(--muted);
@@ -203,6 +324,53 @@
       opacity: 0;
       transform: translateY(30px) scale(0.9);
     }
+  }
+
+  /* Filters */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 clamp(32px, 6vw, 56px);
+    animation: rise 0.8s var(--smooth) 0.4s both;
+  }
+  .filters button {
+    padding: 0.55em 1.1em;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    background: rgba(255, 247, 238, 0.8);
+    backdrop-filter: blur(6px);
+    font: inherit;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    cursor: pointer;
+    transition:
+      transform 0.25s var(--spring),
+      background 0.2s,
+      color 0.2s;
+  }
+  .filters button:hover {
+    transform: translateY(-2px) rotate(-2deg);
+  }
+  .filters button.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  @media (max-width: 560px) {
+    .filters {
+      gap: 6px;
+    }
+    .filters button {
+      padding: 0.45em 0.85em;
+      font-size: 13px;
+    }
+  }
+  .filters button:last-child.active {
+    background: var(--red);
+    border-color: var(--red);
+    color: white;
   }
 
   /* Stats */
@@ -226,11 +394,17 @@
     transform: translateY(-4px) rotate(-1.5deg);
   }
   .stat strong {
-    display: block;
-    font-size: clamp(32px, 4vw, 46px);
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1;
+    /* Pixel digits vary from 26 to 30 art px tall; a fixed row keeps the labels lined up. */
+    display: flex;
+    align-items: flex-end;
+    height: 60px;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 560px) {
+    .stat strong {
+      height: 30px;
+      margin-bottom: 6px;
+    }
   }
   .stat:nth-child(odd) strong {
     color: var(--red);
@@ -517,6 +691,34 @@
     color: var(--muted);
     font-size: 13px;
     white-space: nowrap;
+  }
+
+  /* Disagreements */
+  .note {
+    margin: -8px 0 20px;
+    color: var(--muted);
+    line-height: 2;
+  }
+  .versus {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 4px 10px;
+    font-size: 13px;
+  }
+  .versus .who {
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .versus .val {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .meter.designers i {
+    background: var(--red);
+  }
+  .meter.others i {
+    background: var(--ink);
   }
 
   .empty {

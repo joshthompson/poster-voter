@@ -4,11 +4,16 @@
   import type { Id } from '../../convex/_generated/dataModel';
   import CountUp from '$lib/CountUp.svelte';
   import Logo from '$lib/Logo.svelte';
+  import Button from '$lib/Button.svelte';
+  import PixelText from '$lib/PixelText.svelte';
+  import { resolve } from '$app/paths';
   import { sound } from '$lib/sound.svelte';
+  import { designer } from '$lib/designer.svelte';
+  import { nextPair, pairKey } from '$lib/pairing';
   import { posterSrc, preload, voterId } from '$lib/util';
 
   type Poster = { _id: Id<'posters'>; title: string; image: string };
-  type Phase = 'loading' | 'enter' | 'choose' | 'reveal' | 'exit';
+  type Phase = 'loading' | 'enter' | 'choose' | 'reveal' | 'exit' | 'done';
   type Spark = { angle: number; dist: number; size: number; color: string; delay: number };
 
   const ENTER_MS = 1100;
@@ -33,27 +38,61 @@
 
   let upcoming: Poster[] | null = null;
   let revealTimer: ReturnType<typeof setTimeout> | undefined;
-  const recent: string[] = [];
+  let showing = false;
 
   const list = $derived((posters.data ?? []) as Poster[]);
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  /** Random pair, steering away from posters seen in the last few rounds. */
-  function pick(from: Poster[]): Poster[] {
-    const memory = Math.min(recent.length, Math.max(0, from.length - 2), 24);
-    const avoid = new Set(recent.slice(recent.length - memory));
-    const fresh = from.filter((p) => !avoid.has(p._id));
-    const pool = fresh.length >= 2 ? fresh : from;
-    const i = Math.floor(Math.random() * pool.length);
-    let j = Math.floor(Math.random() * (pool.length - 1));
-    if (j >= i) j++;
-    return [pool[i], pool[j]];
+  // What you've seen and voted on, for nextPair (see $lib/pairing).
+  const SEEN_KEY = 'poster-voter:seen';
+  const myVotes = useQuery(api.votes.mine, { voterId: me });
+  const votedKeys = $derived(new Set(myVotes.data ?? []));
+  const votedPosters = $derived(new Set([...votedKeys].flatMap((k) => k.split('|'))));
+  const justVoted = new Set<string>(); // until the query catches up
+  const shownPairs = new Set<string>();
+  const seen = new Set<string>(readSeen());
+  const totalPairs = $derived((list.length * (list.length - 1)) / 2);
+
+  const hasVoted = (key: string) => justVoted.has(key) || votedKeys.has(key);
+
+  function readSeen(): string[] {
+    try {
+      return JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]');
+    } catch {
+      return [];
+    }
   }
 
-  async function show(next: Poster[]) {
+  function markSeen(ps: Poster[]) {
+    ps.forEach((p) => seen.add(p._id));
+    try {
+      localStorage.setItem(SEEN_KEY, JSON.stringify([...seen]));
+    } catch {
+      // Not remembered across visits; fine.
+    }
+  }
+
+  /** The next pair to show, or null once every pair has been voted on. `avoid` is the pair on screen. */
+  function pick(from: Poster[], avoid?: string): Poster[] | null {
+    return nextPair(from, {
+      hasSeen: (id) => seen.has(id) || votedPosters.has(id),
+      hasVoted,
+      wasShown: (key) => shownPairs.has(key),
+      avoid
+    });
+  }
+
+  async function show(next: Poster[] | null) {
+    if (!next) {
+      pair = null;
+      phase = 'done';
+      return;
+    }
+    showing = true;
     await Promise.all(next.map((p) => preload(posterSrc(p.image))));
-    recent.push(...next.map((p) => p._id));
-    recent.splice(0, Math.max(0, recent.length - 48));
+    markSeen(next);
+    shownPairs.add(pairKey(next));
+    showing = false;
 
     pair = next;
     chosen = null;
@@ -63,8 +102,8 @@
     phase = 'enter';
 
     // Queue up (and preload) the following pair while this one is on screen.
-    upcoming = pick(list);
-    upcoming.forEach((p) => preload(posterSrc(p.image)));
+    upcoming = pick(list, pairKey(next));
+    upcoming?.forEach((p) => preload(posterSrc(p.image)));
 
     await wait(ENTER_MS);
     if (phase === 'enter') phase = 'choose';
@@ -74,9 +113,10 @@
     clearTimeout(revealTimer);
     phase = 'exit';
     await wait(EXIT_MS);
+    // The upcoming pair was chosen before this vote; re-pick if posters changed or it's now voted.
     const ids = new Set(list.map((p) => p._id));
-    const next = upcoming?.every((p) => ids.has(p._id)) ? upcoming : pick(list);
-    await show(next);
+    const stillGood = upcoming?.every((p) => ids.has(p._id)) && !hasVoted(pairKey(upcoming!));
+    await show(stillGood ? upcoming : pick(list, pair ? pairKey(pair) : undefined));
   }
 
   function makeSparks(): Spark[] {
@@ -102,8 +142,10 @@
       const r = await client.mutation(api.votes.cast, {
         winnerId: winner._id,
         loserId: loser._id,
-        voterId: me
+        voterId: me,
+        designer: designer.value ?? undefined
       });
+      justVoted.add(pairKey([winner, loser]));
       const total = r.winnerVotes + r.loserVotes;
       const w = Math.round((r.winnerVotes / total) * 100);
       result = { pct: i === 0 ? [w, 100 - w] : [100 - w, w], total };
@@ -120,6 +162,12 @@
     started = true;
   }
 
+  /** First visit: remember the answer and get going (the click also starts the music). */
+  function answer(isDesigner: boolean) {
+    designer.set(isDesigner);
+    start();
+  }
+
   function skip() {
     if (phase === 'choose') advance();
   }
@@ -134,8 +182,14 @@
     }
   }
 
+  // Show the first pair once posters and your votes have loaded; also wakes 'done' when posters are added.
   $effect(() => {
-    if (started && !pair && phase === 'loading' && list.length >= 2) show(pick(list));
+    if (!started || pair || showing || list.length < 2 || !(myVotes.data || myVotes.error)) return;
+    if (phase === 'loading') show(pick(list));
+    else if (phase === 'done') {
+      const next = pick(list);
+      if (next) show(next);
+    }
   });
 
   const verdict = $derived.by(() => {
@@ -168,9 +222,26 @@
       <h2>No posters yet</h2>
       <p>Drop images into <code>posters/</code> and run <code>pnpm posters:sync</code>.</p>
     </div>
+  {:else if designer.value === null}
+    <div class="intro">
+      <h2 class="question"><PixelText text="Are you a designer?" /></h2>
+      <div class="choices">
+        <span class="pop" style="--i:1"><Button label="Yes" variant="ink" onclick={() => answer(true)} /></span>
+        <span class="pop" style="--i:2"><Button label="No" variant="ink" onclick={() => answer(false)} /></span>
+      </div>
+    </div>
   {:else if !started}
     <div class="intro">
-      <button class="start" onclick={start}>Start voting</button>
+      <span class="pop wobbly"><Button label="Start voting" onclick={start} /></span>
+    </div>
+  {:else if phase === 'done'}
+    <div class="message legible">
+      <h2>That’s every pair!</h2>
+      <p>
+        You’ve voted on all {totalPairs.toLocaleString()} pairs of the current posters. Come back when new ones
+        go up.
+      </p>
+      <a class="ghost next" href={resolve('/results')}>See the rankings →</a>
     </div>
   {:else if !pair}
     <div class="loader" aria-label="Loading"><i></i><i></i><i></i></div>
@@ -622,6 +693,11 @@
     background: var(--ink);
     color: var(--paper);
   }
+  a.ghost {
+    display: inline-block;
+    margin-top: 0.4em;
+    text-decoration: none;
+  }
   .ghost.next {
     background: var(--red);
     border-color: var(--red);
@@ -630,30 +706,35 @@
 
   .intro {
     grid-row: 2;
+    display: grid;
+    justify-items: center;
+    gap: clamp(24px, 4dvh, 40px);
+    text-align: center;
   }
-  .start {
-    padding: 0.55em 1.3em 0.6em;
-    border: 0;
-    border-radius: 999px;
-    background: var(--red);
-    color: white;
-    font: inherit;
-    font-size: clamp(26px, 4vw, 44px);
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    cursor: pointer;
-    box-shadow: 0 20px 50px -12px rgba(255, 59, 92, 0.6);
+  .question {
+    margin: 0;
+    animation: pop-in 0.6s var(--spring) both;
+  }
+  .choices {
+    display: flex;
+    justify-content: center;
+    gap: clamp(14px, 3vw, 28px);
+  }
+  .pop {
+    display: inline-block;
+    animation: pop-in 0.6s var(--spring) both;
+    animation-delay: calc(var(--i, 0) * 0.12s);
+  }
+  .wobbly {
     animation:
       pop-in 0.6s var(--spring) both,
-      wobble 3s ease-in-out 0.8s infinite;
-    transition: background 0.2s;
+      nudge 3s ease-in-out 0.8s infinite;
   }
-  .start:hover {
-    background: var(--ink);
-  }
-  .start:focus-visible {
-    outline: 4px solid var(--yellow);
-    outline-offset: 4px;
+  /* A gentler wobble than the "vs" badge's; a wide button tilting 10° looks off. */
+  @keyframes nudge {
+    50% {
+      transform: scale(1.04) rotate(-2deg);
+    }
   }
 
   .message {

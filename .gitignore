@@ -7,9 +7,10 @@ node_modules
 .env*
 !.env.example
 
-# Original (full-size) poster files; optimised copies live in static/posters
+# Original (full-size) poster files; optimised copies live in static/posters/<slug>
 /posters/*
 !/posters/titles.json
+!/posters/competition.json
 
 # Local anonymous Convex backend state
 /.convex
