@@ -245,10 +245,13 @@
 <style>
   .stage {
     --gap: clamp(20px, 5vw, 90px);
-    --w: min(34vw, calc((100dvh - 260px) * 0.75), 440px);
-    min-height: 100dvh;
+    /* Room a card needs beyond its 3:4 frame: caption, bob and tilt. */
+    --extra: 80px;
+    /* Sized from the pair row's height (cqh, see .pair) so the footer always fits on screen. */
+    --w: min(34vw, calc((100cqh - var(--extra)) * 0.75), 440px);
+    height: 100dvh;
     display: grid;
-    grid-template-rows: 1fr auto 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     justify-items: center;
     align-items: center;
     padding: clamp(76px, 12dvh, 112px) 16px 24px;
@@ -262,7 +265,7 @@
     display: grid;
     place-items: end center;
     text-align: center;
-    padding-bottom: clamp(20px, 4dvh, 40px);
+    padding-bottom: clamp(12px, 2.5dvh, 32px);
   }
   .verdict {
     margin: 0;
@@ -290,6 +293,10 @@
 
   /* ── Pair layout ──────────────────────────── */
   .pair {
+    /* Fills the middle row; its height drives --w via cqh. */
+    container-type: size;
+    align-self: stretch;
+    justify-self: stretch;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -595,8 +602,8 @@
   /* ── Footer / misc ────────────────────────── */
   .footer {
     align-self: start;
-    min-height: 64px;
-    padding-top: clamp(16px, 4dvh, 40px);
+    min-height: 48px;
+    padding-top: clamp(12px, 2.5dvh, 32px);
   }
   .ghost {
     border: 2px solid var(--ink);
@@ -696,7 +703,9 @@
   @media (max-aspect-ratio: 4 / 5) {
     .stage {
       --gap: clamp(28px, 5dvh, 56px);
-      --w: min(64vw, calc((100dvh - 330px) / 2 * 0.75), 420px);
+      /* Two stacked cards, no captions: split the row height between them. */
+      --extra: 40px;
+      --w: min(64vw, calc(((100cqh - var(--gap)) / 2 - var(--extra)) * 0.75), 420px);
       padding-top: 96px;
     }
     .pair {
