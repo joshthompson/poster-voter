@@ -153,6 +153,10 @@
 
 <svelte:window onkeydown={onKey} />
 
+<svelte:head>
+  <title>Poster Voter</title>
+</svelte:head>
+
 <section class="stage" data-phase={phase}>
   {#if posters.error}
     <div class="message legible">
