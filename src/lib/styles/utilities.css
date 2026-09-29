@@ -1,0 +1,11 @@
+/* Soft white backing for any text that sits directly on the polka dots. */
+.legible {
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border-radius: 0.45em;
+  padding: 0.18em 0.55em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  box-shadow: 0 6px 20px -14px rgba(31, 26, 36, 0.35);
+}

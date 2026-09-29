@@ -1,0 +1,14 @@
+/* Entrance animations used across pages. Components reference these by name. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7) translateY(10px);
+  }
+}

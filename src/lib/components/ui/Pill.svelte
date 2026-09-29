@@ -1,0 +1,84 @@
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+
+  // A small rounded text button, or a link when given `href`.
+  // `ink` is solid dark, `red` is the call to action, `outline` is the quiet option.
+  // `pressed` marks the selected option in a group of toggles.
+
+  let {
+    href,
+    onclick,
+    variant = 'outline',
+    pressed,
+    children
+  }: {
+    href?: string;
+    onclick?: (e: MouseEvent) => void;
+    variant?: 'ink' | 'red' | 'outline';
+    pressed?: boolean;
+    children: Snippet;
+  } = $props();
+</script>
+
+{#if href}
+  <a class="pill {variant}" {href} {onclick}>{@render children()}</a>
+{:else}
+  <button class="pill {variant}" {onclick} aria-pressed={pressed}>{@render children()}</button>
+{/if}
+
+<style>
+  .pill {
+    display: inline-block;
+    padding: 0.55em 1.1em;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 15px;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      transform 0.25s var(--spring),
+      background 0.2s,
+      border-color 0.2s,
+      color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (max-width: 560px) {
+    .pill {
+      padding: 0.45em 0.85em;
+      font-size: 13px;
+    }
+  }
+  .pill:hover {
+    transform: translateY(-2px) rotate(-2deg) scale(1.05);
+  }
+  .pill:focus-visible {
+    outline: 3px solid var(--yellow);
+    outline-offset: 3px;
+  }
+
+  .ink {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .ink:hover {
+    background: var(--red);
+    border-color: var(--red);
+  }
+  .red {
+    background: var(--red);
+    border-color: var(--red);
+    color: white;
+  }
+  .outline {
+    background: rgba(255, 247, 238, 0.8);
+    backdrop-filter: blur(6px);
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+  .outline:hover {
+    background: white;
+  }
+</style>

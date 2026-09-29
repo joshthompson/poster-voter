@@ -9,7 +9,9 @@ const config = {
     adapter: adapter({ fallback: '404.html' }),
     // Empty for the custom domain (postervote.com); e.g. BASE_PATH=/postervote for
     // https://<user>.github.io/postervote. A lone "/" (GitHub variables can't be empty) means root.
-    paths: { base: (process.env.BASE_PATH ?? '').replace(/\/+$/, '') }
+    paths: { base: (process.env.BASE_PATH ?? '').replace(/\/+$/, '') },
+    // Convex's generated client code: `import { api } from '$convex/api'`.
+    alias: { $convex: 'convex/_generated' }
   }
 };
 
