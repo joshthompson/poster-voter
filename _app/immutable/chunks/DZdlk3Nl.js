@@ -1,0 +1,1 @@
+import{I as e,S as t,V as n,at as r,d as i,g as a,i as o,w as s}from"./BJbhc2iS.js";import"./xihTtKlq.js";var c=s(`<div><!></div>`);function l(s,l){let u=o(l,`width`,3,`narrow`);var d=c(),f=n(d);a(f,()=>l.children),r(d),e(()=>i(d,1,`page ${u()??``}`,`svelte-18r4hqc`)),t(s,d)}export{l as t};
