@@ -156,7 +156,7 @@
       justify-items: center;
       gap: 8px;
     }
-    /* The header stacks into one centred column here, so pin the button to the corner. */
+    /* The header stacks into one centred column here, so pin the buttons to the corners. */
     .mute {
       position: absolute;
       top: 12px;
@@ -171,6 +171,16 @@
     }
     nav {
       max-width: 100%;
+    }
+    /* Mirrors the mute button in the opposite corner. */
+    nav :global(.menu) {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+    }
+    nav :global(.burger) {
+      width: 36px;
+      height: 36px;
     }
     .slot {
       flex: 0 1 auto;
