@@ -10,7 +10,7 @@ export function posterSrc(image: string) {
 
 /** Anonymous id so we can count distinct voters. */
 export function voterId() {
-  const KEY = 'poster-voter:id';
+  const KEY = 'postervote:id';
   try {
     let id = localStorage.getItem(KEY);
     if (!id) {
@@ -27,7 +27,7 @@ export function voterId() {
 export function clearStorage() {
   try {
     Object.keys(localStorage)
-      .filter((key) => key.startsWith('poster-voter:'))
+      .filter((key) => key.startsWith('postervote:'))
       .forEach((key) => localStorage.removeItem(key));
   } catch {
     // Nothing stored; fine.

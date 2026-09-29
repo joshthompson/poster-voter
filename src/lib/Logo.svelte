@@ -2,12 +2,12 @@
   import { onMount } from 'svelte';
   import { glyphFor } from './glyphs';
 
-  // Text (default "POSTER VOTER!") spelled out in hand-drawn pixel letters from ./assets/chars.
+  // Text (default "POSTER VOTE!") spelled out in hand-drawn pixel letters from ./assets/chars.
   // Each letter drifts gently on its own path. Positions are snapped to whole device pixels
   // every frame so the pixel art is never resampled (no blur, no shimmer).
   // `px` fixes the screen pixels per art pixel; omit it to use the responsive default.
 
-  let { text = 'POSTER VOTER!', px }: { text?: string; px?: number } = $props();
+  let { text = 'POSTER VOTE!', px }: { text?: string; px?: number } = $props();
 
   // The text is fixed for the component's lifetime, so only its initial value is needed.
   const letters = $state(

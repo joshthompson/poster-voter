@@ -7,7 +7,7 @@
 const BPM = 128;
 const STEP = 60 / BPM / 4; // one 16th note, in seconds
 const LOOKAHEAD = 0.12; // how far ahead to schedule, in seconds
-const MUTE_KEY = 'poster-voter:muted';
+const MUTE_KEY = 'postervote:muted';
 
 // A minor. Bass roots for each bar of a 4-bar loop, and the stab chord above them.
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);

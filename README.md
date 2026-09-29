@@ -1,4 +1,4 @@
-# Poster Voter
+# Poster Vote
 
 Two posters fly out, you pick your favourite, and then you see how everyone else voted on that pair. Every vote updates an Elo rating, and `/results` shows the live rankings.
 

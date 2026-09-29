@@ -7,8 +7,9 @@ const config = {
   kit: {
     // GitHub Pages: static files + 404.html fallback for client-side routing.
     adapter: adapter({ fallback: '404.html' }),
-    // e.g. BASE_PATH=/poster-voter for https://<user>.github.io/poster-voter
-    paths: { base: process.env.BASE_PATH ?? '' }
+    // Empty for the custom domain (postervote.com); e.g. BASE_PATH=/postervote for
+    // https://<user>.github.io/postervote. A lone "/" (GitHub variables can't be empty) means root.
+    paths: { base: (process.env.BASE_PATH ?? '').replace(/\/+$/, '') }
   }
 };
 

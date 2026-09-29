@@ -1,7 +1,7 @@
 // Whether this visitor says they're a designer: asked once, remembered in localStorage,
 // and sent with every vote so the rankings can be split by it. null = not asked yet.
 
-const KEY = 'poster-voter:designer';
+const KEY = 'postervote:designer';
 
 function read(): boolean | null {
   try {

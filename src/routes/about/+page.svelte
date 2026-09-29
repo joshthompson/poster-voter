@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-  <title>About · Poster Voter</title>
+  <title>About · Poster Vote</title>
 </svelte:head>
 
 <div class="page">

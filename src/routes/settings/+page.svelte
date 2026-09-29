@@ -11,7 +11,7 @@
 
   function clear() {
     const ok = confirm(
-      'Clear everything Poster Voter remembers on this device? You’ll start again as a new voter. Votes you’ve already cast stay in the rankings.'
+      'Clear everything Poster Vote remembers on this device? You’ll start again as a new voter. Votes you’ve already cast stay in the rankings.'
     );
     if (!ok) return;
     clearStorage();
@@ -21,7 +21,7 @@
 </script>
 
 <svelte:head>
-  <title>Settings · Poster Voter</title>
+  <title>Settings · Poster Vote</title>
 </svelte:head>
 
 <div class="page">

@@ -44,7 +44,7 @@
   const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   // What you've seen and voted on, for nextPair (see $lib/pairing).
-  const SEEN_KEY = 'poster-voter:seen';
+  const SEEN_KEY = 'postervote:seen';
   const myVotes = useQuery(api.votes.mine, { voterId: me });
   const votedKeys = $derived(new Set(myVotes.data ?? []));
   const votedPosters = $derived(new Set([...votedKeys].flatMap((k) => k.split('|'))));
@@ -208,7 +208,7 @@
 <svelte:window onkeydown={onKey} />
 
 <svelte:head>
-  <title>Poster Voter</title>
+  <title>Poster Vote</title>
 </svelte:head>
 
 <section class="stage" data-phase={phase}>

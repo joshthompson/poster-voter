@@ -52,7 +52,7 @@
 </script>
 
 <svelte:head>
-  <title>{competition ? `${competition.title} · ` : ''}Rankings · Poster Voter</title>
+  <title>{competition ? `${competition.title} · ` : ''}Rankings · Poster Vote</title>
 </svelte:head>
 
 <div class="page">

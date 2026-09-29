@@ -44,7 +44,7 @@
       {/if}
     </svg>
   </button>
-  <a class="brand" href={resolve('/')} aria-label="Poster Voter!">
+  <a class="brand" href={resolve('/')} aria-label="Poster Vote!">
     <Logo />
   </a>
   <nav>
