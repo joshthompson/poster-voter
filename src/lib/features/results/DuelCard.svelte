@@ -37,10 +37,14 @@
     box-shadow: var(--shadow-card);
     animation: rise 0.8s var(--spring) both;
     animation-delay: calc(0.8s + var(--i) * 0.12s);
-    transition: transform 0.35s var(--spring);
+    transition:
+      transform 0.35s var(--spring),
+      box-shadow 0.35s;
   }
+  /* Lift by whole pixels only: rotating or scaling text resamples it and it blurs. */
   .duel-card:hover {
-    transform: translateY(-5px) rotate(0.8deg);
+    transform: translateY(-5px);
+    box-shadow: 0 24px 44px -20px rgba(31, 26, 36, 0.5);
   }
   header {
     display: flex;

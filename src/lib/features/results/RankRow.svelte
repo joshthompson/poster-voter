@@ -3,7 +3,8 @@
   import { posterSrc } from '$lib/utils/images';
 
   // One row of a ranked list: rank, thumbnail, title with `children` under it, and a big number
-  // with a caption on the right. `top` colours the rank for the leaders.
+  // with a caption on the right. `top` colours the rank for the leaders. With `onclick` the whole
+  // row is a button.
 
   let {
     rank,
@@ -12,6 +13,7 @@
     value,
     caption,
     top = false,
+    onclick,
     children
   }: {
     rank: number;
@@ -20,11 +22,12 @@
     value: string | number;
     caption: string;
     top?: boolean;
+    onclick?: () => void;
     children: Snippet;
   } = $props();
 </script>
 
-<div class="row">
+{#snippet contents()}
   <span class="rank" class:top>{rank}</span>
   <img src={posterSrc(image)} alt="" loading="lazy" />
   <div class="info">
@@ -35,7 +38,13 @@
     <span class="value">{value}</span>
     <span class="caption">{caption}</span>
   </div>
-</div>
+{/snippet}
+
+{#if onclick}
+  <button type="button" class="row clickable" {onclick}>{@render contents()}</button>
+{:else}
+  <div class="row">{@render contents()}</div>
+{/if}
 
 <style>
   .row {
@@ -52,8 +61,21 @@
       transform 0.3s var(--spring),
       box-shadow 0.3s;
   }
+  .clickable {
+    width: 100%;
+    border: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .clickable:focus-visible {
+    outline: 3px solid var(--red);
+    outline-offset: 2px;
+  }
+  /* Lift by whole pixels only: rotating or scaling text resamples it and it blurs. */
   .row:hover {
-    transform: scale(1.015) rotate(-0.4deg);
+    transform: translateY(-2px);
     box-shadow: 0 14px 30px -16px rgba(255, 59, 92, 0.5);
   }
   .rank {

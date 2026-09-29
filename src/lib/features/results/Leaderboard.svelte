@@ -9,9 +9,10 @@
   import RankRow from './RankRow.svelte';
   import type { RankedPoster } from './types';
 
-  // Every poster by rating. Rows slide to their new place as votes come in.
+  // Every poster by rating. Rows slide to their new place as votes come in; clicking one
+  // calls `onopen` with it.
 
-  let { posters }: { posters: RankedPoster[] } = $props();
+  let { posters, onopen }: { posters: RankedPoster[]; onopen: (poster: RankedPoster) => void } = $props();
 
   // Meters span the lowest to the highest rating, with a sliver even for last place.
   const range = $derived.by(() => {
@@ -36,6 +37,7 @@
         value={p.rating}
         caption="{p.wins}–{p.losses} · {p.matches ? pct(p.winRate) : '—'}"
         top={p.rank <= 3}
+        onclick={() => onopen(p)}
       >
         <Meter value={meter(p.rating)} />
       </RankRow>

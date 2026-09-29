@@ -9,10 +9,11 @@
   import Leaderboard from './Leaderboard.svelte';
   import Note from './Note.svelte';
   import Podium from './Podium.svelte';
+  import PosterDetail from './PosterDetail.svelte';
   import ResultsHero from './ResultsHero.svelte';
   import StatTiles from './StatTiles.svelte';
   import ViewFilters from './ViewFilters.svelte';
-  import type { View } from './types';
+  import type { RankedPoster, View } from './types';
 
   // A competition's results: the active one, or the one named by `slug` (usually archived).
   // Everyone / designers / non-designers share the overview; disagreements has its own query.
@@ -35,6 +36,11 @@
   const missing = $derived(view === 'disagree' ? split.data === null : overview.data === null);
   // The voter group the overview is showing (the overview is skipped for 'disagree').
   const segment = $derived(view === 'disagree' ? 'all' : view);
+
+  // The poster open in the detail modal, looked up in the live list so its numbers keep updating.
+  let openId = $state<RankedPoster['_id'] | null>(null);
+  const openPoster = $derived(data?.posters.find((p) => p._id === openId) ?? null);
+  const onopen = (p: RankedPoster) => (openId = p._id);
 
   const sub = $derived.by(() => {
     if (missing) return slug ? t.noCompetitionHere : t.noCompetition;
@@ -98,11 +104,12 @@
         {/if}
       </Note>
     {:else}
-      <Podium top={data.posters.slice(0, 3)} />
+      <Podium top={data.posters.slice(0, 3)} {onopen} />
       <Highlights closest={data.closest} lopsided={data.lopsided} />
     {/if}
 
-    <Leaderboard posters={data.posters} />
+    <Leaderboard posters={data.posters} {onopen} />
+    <PosterDetail poster={openPoster} {segment} competition={slug} onclose={() => (openId = null)} />
   {:else}
     <div class="loading"><Loader /></div>
   {/if}

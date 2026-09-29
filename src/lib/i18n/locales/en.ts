@@ -145,7 +145,20 @@ export const en = {
     lopsided: 'Most lopsided',
     lopsidedBlurb: 'Not even close',
     vs: 'vs',
-    everyPoster: 'Every poster'
+    everyPoster: 'Every poster',
+    detail: {
+      close: 'Close',
+      rank: (rank: number) => `No. ${num(rank)}`,
+      points: 'Points',
+      record: 'Won–lost',
+      winRate: 'Win rate',
+      matches: 'Match-ups',
+      byGroup: 'Who it wins with',
+      noVotes: 'no votes yet',
+      headToHead: 'Head-to-head',
+      noMatches: 'It hasn’t met another poster yet.',
+      more: (n: number) => `and ${num(n)} more`
+    }
   }
 };
 

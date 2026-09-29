@@ -142,6 +142,19 @@ export const sv: Messages = {
     lopsided: 'Mest ensidigt',
     lopsidedBlurb: 'Inte ens nära',
     vs: 'vs',
-    everyPoster: 'Alla affischer'
+    everyPoster: 'Alla affischer',
+    detail: {
+      close: 'Stäng',
+      rank: (rank: number) => `Nr ${num(rank)}`,
+      points: 'Poäng',
+      record: 'Vunna–förlorade',
+      winRate: 'Vinstandel',
+      matches: 'Dueller',
+      byGroup: 'Vilka den vinner hos',
+      noVotes: 'inga röster än',
+      headToHead: 'Mot varandra',
+      noMatches: 'Den har inte mött någon annan affisch än.',
+      more: (n: number) => `och ${num(n)} till`
+    }
   }
 };

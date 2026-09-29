@@ -32,10 +32,14 @@
     box-shadow: var(--shadow-card);
     animation: rise 0.7s var(--spring) both;
     animation-delay: calc(0.2s + var(--i) * 0.08s);
-    transition: transform 0.35s var(--spring);
+    transition:
+      transform 0.35s var(--spring),
+      box-shadow 0.35s;
   }
+  /* Lift by whole pixels only: rotating or scaling text resamples it and it blurs. */
   .stat:hover {
-    transform: translateY(-4px) rotate(-1.5deg);
+    transform: translateY(-4px);
+    box-shadow: 0 24px 44px -20px rgba(31, 26, 36, 0.5);
   }
   strong {
     /* Pixel digits vary from 26 to 30 art px tall; a fixed row keeps the labels lined up. */

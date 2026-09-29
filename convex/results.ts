@@ -166,3 +166,44 @@ export const disagreements = query({
     };
   }
 });
+
+/**
+ * One poster's detail: its win rate with designers and with everyone else, and its record
+ * against each current poster it has met (in `segment`'s votes), most-met first.
+ */
+export const poster = query({
+  args: { id: v.id('posters'), segment: v.optional(segment), competition: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const loaded = await load(ctx, args.competition);
+    if (!loaded) return null;
+    const { posters, votes } = loaded;
+    const byId = new Map(posters.map((p) => [p._id, p]));
+    if (!byId.has(args.id)) return null;
+    const seg = args.segment ?? 'all';
+
+    const record = () => ({ wins: 0, losses: 0 });
+    const groups = { designers: record(), others: record() };
+    const opponents = new Map<Id<'posters'>, { wins: number; losses: number }>();
+    for (const vote of votes) {
+      const won = vote.winnerId === args.id;
+      if (!won && vote.loserId !== args.id) continue;
+      const group = vote.designer === true ? groups.designers : vote.designer === false ? groups.others : null;
+      if (group) group[won ? 'wins' : 'losses']++;
+
+      if (!inSegment(seg, vote)) continue;
+      const other = won ? vote.loserId : vote.winnerId;
+      if (!byId.has(other)) continue;
+      const r = opponents.get(other) ?? record();
+      r[won ? 'wins' : 'losses']++;
+      opponents.set(other, r);
+    }
+
+    return {
+      designers: groups.designers,
+      others: groups.others,
+      opponents: [...opponents]
+        .map(([id, r]) => ({ _id: id, title: byId.get(id)!.title, image: byId.get(id)!.image, ...r }))
+        .sort((a, b) => b.wins + b.losses - (a.wins + a.losses) || b.wins - b.losses - (a.wins - a.losses))
+    };
+  }
+});
