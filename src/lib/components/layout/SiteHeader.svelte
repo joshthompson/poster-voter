@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import beta from '$lib/assets/beta.png';
   import Logo from '$lib/components/pixel/Logo.svelte';
   import MuteButton from './MuteButton.svelte';
   import NavPill from './NavPill.svelte';
@@ -14,7 +15,9 @@
 
 <header>
   <div class="corner start"><MuteButton /></div>
-  <a class="brand" href={resolve('/')} aria-label="Poster Vote!"><Logo /></a>
+  <a class="brand" href={resolve('/')} aria-label="Poster Vote! (beta)"
+    ><Logo /><img class="beta" src={beta} alt="" aria-hidden="true" draggable="false" /></a
+  >
   <nav>
     <NavPill />
     {#if withMenu}<div class="corner end"><SiteMenu /></div>{/if}
@@ -42,8 +45,21 @@
     justify-self: start;
   }
   .brand {
+    position: relative;
     display: inline-block;
     text-decoration: none;
+  }
+  /* Beta tag tucked under the logo's bottom-right corner, drawn at one screen pixel per art pixel. */
+  .beta {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 44px;
+    height: 16px;
+    transform: translate(40%, 60%);
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    user-select: none;
   }
   nav {
     justify-self: stretch;
