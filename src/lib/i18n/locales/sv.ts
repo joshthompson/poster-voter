@@ -80,7 +80,7 @@ export const sv: Messages = {
   about: {
     title: 'Om',
     madeBy: 'Gjord av',
-    names: 'Alisa Vasileva och Josh Thompson',
+    people: ['Alisa Vasileva', 'Josh Thompson'],
     elo: {
       title: 'Så funkar topplistan',
       body: [
@@ -150,6 +150,8 @@ export const sv: Messages = {
       localTitle: 'Lokala favoriter',
       localNote: (min: number) => `Affischen varje stad väljer oftast. En stad behöver ${num(min)} röster för att räknas.`,
       localPick: 'Lokal favorit',
+      previous: 'Föregående städer',
+      next: 'Fler städer',
       wonThere: (wins: number, matches: number) => `Vann ${num(wins)} av ${num(matches)} där`
     },
     detail: {

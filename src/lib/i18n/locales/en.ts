@@ -82,8 +82,8 @@ export const en = {
   about: {
     title: 'About',
     madeBy: 'Made by',
-    // Non-breaking spaces so a line only ever breaks between the names, never inside one.
-    names: 'Alisa Vasileva and Josh Thompson',
+    // Non-breaking spaces keep each name on one line.
+    people: ['Alisa Vasileva', 'Josh Thompson'],
     elo: {
       title: 'How the rankings work',
       body: [
@@ -153,6 +153,8 @@ export const en = {
       localTitle: 'Local favourites',
       localNote: (min: number) => `The poster each city picks most. A city needs ${num(min)} votes to count.`,
       localPick: 'Local pick',
+      previous: 'Previous cities',
+      next: 'More cities',
       wonThere: (wins: number, matches: number) => `Won ${num(wins)} of ${num(matches)} there`
     },
     detail: {

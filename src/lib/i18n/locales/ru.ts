@@ -82,7 +82,7 @@ export const ru: Messages = {
   about: {
     title: 'О проекте',
     madeBy: 'Авторы',
-    names: 'Алиса Васильева и Джош Томпсон',
+    people: ['Алиса Васильева', 'Джош Томпсон'],
     elo: {
       title: 'Как устроен рейтинг',
       body: [
@@ -155,6 +155,8 @@ export const ru: Messages = {
       localNote: (min: number) =>
         `Постер, который чаще всего выбирают в каждом городе. Городу нужно ${num(min)} ${plural(min, 'голос', 'голоса', 'голосов')}, чтобы попасть сюда.`,
       localPick: 'Местный фаворит',
+      previous: 'Предыдущие города',
+      next: 'Ещё города',
       wonThere: (wins: number, matches: number) => `Там: ${num(wins)} ${plural(wins, 'победа', 'победы', 'побед')} из ${num(matches)}`
     },
     detail: {

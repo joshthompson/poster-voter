@@ -14,7 +14,7 @@ const inSegment = (s: Segment, vote: Doc<'votes'>) =>
 
 /** A city needs this many votes before it gets a local favourite. */
 export const LOCAL_MIN_VOTES = 5;
-const LOCAL_PICKS = 6;
+const LOCAL_PICKS = 12;
 
 /** Where a vote came from, as a grouping key and its parts; null when it has no location. */
 function placeOf(vote: Doc<'votes'>) {
