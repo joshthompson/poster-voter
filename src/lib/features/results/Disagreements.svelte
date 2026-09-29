@@ -9,9 +9,9 @@
   import type { SplitPoster } from './types';
 
   // Posters designers and everyone else rate most differently, biggest gap first,
-  // with each group's win rate and rank side by side.
+  // with each group's win rate and rank side by side. Clicking one calls `onopen` with it.
 
-  let { posters }: { posters: SplitPoster[] } = $props();
+  let { posters, onopen }: { posters: SplitPoster[]; onopen: (poster: SplitPoster) => void } = $props();
 
   const t = $derived(i18n.t.results);
   const groups = $derived([
@@ -30,6 +30,7 @@
         value={t.gap(Math.round(Math.abs(p.gap) * 100))}
         caption={p.gap > 0 ? t.designersLove : t.designersNotSold}
         top={i < 3}
+        onclick={() => onopen(p)}
       >
         <div class="versus">
           {#each groups as g}

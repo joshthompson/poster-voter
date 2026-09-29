@@ -17,7 +17,8 @@
   import type { RankedPoster, View } from './types';
 
   // A competition's results: the active one, or the one named by `slug` (usually archived).
-  // Everyone / designers / non-designers share the overview; disagreements has its own query.
+  // Everyone / designers / non-designers share the overview; disagreements has its own query,
+  // with everyone's overview kept loaded behind it for the poster modal.
 
   let { slug }: { slug?: string } = $props();
 
@@ -25,7 +26,7 @@
 
   const overview = useQuery(
     api.results.overview,
-    () => (view === 'disagree' ? 'skip' : { segment: view, competition: slug }),
+    () => ({ segment: view === 'disagree' ? 'all' : view, competition: slug }),
     { keepPreviousData: true }
   );
   const split = useQuery(api.results.disagreements, () => (view === 'disagree' ? { competition: slug } : 'skip'));
@@ -41,7 +42,7 @@
   // The poster open in the detail modal, looked up in the live list so its numbers keep updating.
   let openId = $state<RankedPoster['_id'] | null>(null);
   const openPoster = $derived(data?.posters.find((p) => p._id === openId) ?? null);
-  const onopen = (p: RankedPoster) => (openId = p._id);
+  const onopen = (p: { _id: RankedPoster['_id'] }) => (openId = p._id);
 
   const sub = $derived.by(() => {
     if (missing) return slug ? t.noCompetitionHere : t.noCompetition;
@@ -87,7 +88,7 @@
     {:else if !split.data.posters.length}
       <Note>{t.notEnough(split.data.minMatches, split.data.designerVotes, split.data.otherVotes)}</Note>
     {:else}
-      <Disagreements posters={split.data.posters} />
+      <Disagreements posters={split.data.posters} {onopen} />
     {/if}
   {:else if overview.error}
     <Note>{t.loadError(overview.error.message)}</Note>
@@ -111,11 +112,12 @@
     {/if}
 
     <Leaderboard posters={data.posters} {onopen} />
-    <PosterDetail poster={openPoster} {segment} competition={slug} onclose={() => (openId = null)} />
   {:else}
     <div class="loading"><Loader /></div>
   {/if}
 {/if}
+
+<PosterDetail poster={openPoster} {segment} competition={slug} onclose={() => (openId = null)} />
 
 <style>
   .loading {
