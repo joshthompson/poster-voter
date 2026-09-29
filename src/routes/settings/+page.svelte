@@ -5,14 +5,13 @@
   import Button from '$lib/Button.svelte';
   import PixelText from '$lib/PixelText.svelte';
   import { designer } from '$lib/designer.svelte';
+  import { i18n, LANGUAGES, type Lang } from '$lib/i18n.svelte';
   import { clearStorage, voterId } from '$lib/util';
 
   const votes = useQuery(api.votes.count, { voterId: voterId() });
 
   function clear() {
-    const ok = confirm(
-      'Clear everything Poster Vote remembers on this device? You’ll start again as a new voter. Votes you’ve already cast stay in the rankings.'
-    );
+    const ok = confirm(i18n.t.settings.clearConfirm);
     if (!ok) return;
     clearStorage();
     // A full reload so every page starts from the cleared state (and asks the designer question again).
@@ -21,32 +20,42 @@
 </script>
 
 <svelte:head>
-  <title>Settings · Poster Vote</title>
+  <title>{i18n.t.settings.title} · {i18n.t.brand}</title>
 </svelte:head>
 
 <div class="page">
-  <h1><PixelText text="Settings" color="var(--ink)" /></h1>
+  <h1><PixelText text={i18n.t.settings.title} color="var(--ink)" /></h1>
 
   <section class="card" style="--i:1">
-    <h2>Are you a designer?</h2>
-    <p class="hint">Used to split the rankings. A change applies to your votes from now on.</p>
+    <h2>{i18n.t.designerQuestion}</h2>
+    <p class="hint">{i18n.t.settings.designerHint}</p>
     <div class="choices">
-      <Button label="Yes" variant="ink" pressed={designer.value === true} onclick={() => designer.set(true)} />
-      <Button label="No" variant="ink" pressed={designer.value === false} onclick={() => designer.set(false)} />
+      <Button label={i18n.t.yes} variant="ink" px={1} pressed={designer.value === true} onclick={() => designer.set(true)} />
+      <Button label={i18n.t.no} variant="ink" px={1} pressed={designer.value === false} onclick={() => designer.set(false)} />
     </div>
   </section>
 
   <section class="card" style="--i:2">
-    <h2>Your votes</h2>
+    <h2>{i18n.t.settings.language}</h2>
+    <!-- Each language is named in itself, so it's findable whichever one is showing. -->
+    <div class="choices">
+      {#each Object.entries(LANGUAGES) as [lang, { name }]}
+        <Button label={name} variant="ink" px={1} pressed={i18n.lang === lang} onclick={() => i18n.set(lang as Lang)} />
+      {/each}
+    </div>
+  </section>
+
+  <section class="card" style="--i:3">
+    <h2>{i18n.t.settings.yourVotes}</h2>
     <p class="count">
       {#if votes.data === undefined}
-        Counting…
+        {i18n.t.settings.counting}
       {:else}
-        You have voted <strong>{votes.data.toLocaleString()}</strong> {votes.data === 1 ? 'time' : 'times'}.
+        {i18n.t.settings.votedBefore} <strong>{i18n.num(votes.data)}</strong> {i18n.t.settings.votedAfter(votes.data)}
       {/if}
     </p>
-    <p class="hint">Clearing storage forgets your designer answer, the posters you’ve seen and your mute setting.</p>
-    <Button label="Clear storage" variant="paper" px={1} onclick={clear} />
+    <p class="hint">{i18n.t.settings.clearHint}</p>
+    <Button label={i18n.t.settings.clear} variant="paper" px={1} onclick={clear} />
   </section>
 </div>
 
@@ -60,6 +69,9 @@
   h1 {
     --text-px: 4;
     --text-px-sm: 2;
+    /* Flex so a heading wider than the column overflows evenly on both sides. */
+    display: flex;
+    justify-content: center;
     margin: 0 0 clamp(28px, 5vw, 48px);
     animation: rise 0.8s var(--spring) both;
   }
@@ -97,6 +109,8 @@
   }
   .choices {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 14px;
   }
   @keyframes rise {

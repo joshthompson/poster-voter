@@ -9,14 +9,10 @@
   import CountUp from '$lib/CountUp.svelte';
   import PixelText from '$lib/PixelText.svelte';
   import { posterSrc } from '$lib/util';
+  import { i18n } from '$lib/i18n.svelte';
 
   type View = 'all' | 'designers' | 'others' | 'disagree';
-  const VIEWS: { id: View; label: string }[] = [
-    { id: 'all', label: 'Everyone' },
-    { id: 'designers', label: 'Designers' },
-    { id: 'others', label: 'Non-designers' },
-    { id: 'disagree', label: 'Biggest disagreements' }
-  ];
+  const VIEWS: View[] = ['all', 'designers', 'others', 'disagree'];
   let view = $state<View>('all');
 
   // /results is the active competition; /results/<slug> is any competition, usually an archived one.
@@ -47,50 +43,52 @@
   );
 
   const pct = (n: number) => `${Math.round(n * 100)}%`;
-  const who = $derived(view === 'designers' ? ' by designers' : view === 'others' ? ' by non-designers' : '');
-  const gapLabel = (gap: number) => `${Math.round(Math.abs(gap) * 100)} pts`;
+  // The voter group the overview is showing (the overview is skipped for 'disagree').
+  const segment = $derived(view === 'disagree' ? 'all' : view);
+  const gapLabel = (gap: number) => i18n.t.results.gap(Math.round(Math.abs(gap) * 100));
+  const t = $derived(i18n.t.results);
 </script>
 
 <svelte:head>
-  <title>{competition ? `${competition.title} · ` : ''}Rankings · Poster Vote</title>
+  <title>{competition ? `${competition.title} · ` : ''}{t.title} · {i18n.t.brand}</title>
 </svelte:head>
 
 <div class="page">
   <section class="hero">
     <h1>
-      <span class="w" style="--i:0"><PixelText text="The" color="var(--ink)" /></span>
-      <span class="w" style="--i:1"><PixelText text="Rankings" color="var(--red)" /></span>
+      <span class="w" style="--i:0"><PixelText text={t.heading[0]} color="var(--ink)" /></span>
+      <span class="w" style="--i:1"><PixelText text={t.heading[1]} color="var(--red)" /></span>
     </h1>
     <svg class="squiggle" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true">
       <path d="M2 12 Q 20 2, 40 12 T 80 12 T 120 12 T 160 12 T 200 12 T 240 12 T 280 12 T 298 10" />
     </svg>
     {#if competition}
       <p class="competition">
-        <span class="legible">{competition.title}{archived ? ' · Archived' : ''}</span>
+        <span class="legible">{competition.title}{archived ? ` · ${t.archived}` : ''}</span>
       </p>
     {/if}
     <p class="sub">
       <span class="legible">
         {#if missing}
-          {slug ? 'There’s no competition here.' : 'No competition is running yet.'}
+          {slug ? t.noCompetitionHere : t.noCompetition}
         {:else if view === 'disagree'}
-          Where designers and everyone else part ways.
+          {t.disagreeSub}
         {:else if data && archived}
-          Final results from {data.stats.totalVotes.toLocaleString()} head-to-heads{who}.
+          {t.final(data.stats.totalVotes, segment)}
         {:else if data}
-          Live from {data.stats.totalVotes.toLocaleString()} head-to-heads{who}. Updates as people vote.
+          {t.live(data.stats.totalVotes, segment)}
         {:else}
-          Tallying the dots…
+          {t.tallying}
         {/if}
       </span>
     </p>
   </section>
 
   {#if !missing}
-    <nav class="filters" aria-label="Whose votes to show">
+    <nav class="filters" aria-label={t.viewsLabel}>
       {#each VIEWS as v}
-        <button class:active={view === v.id} aria-pressed={view === v.id} onclick={() => (view = v.id)}>
-          {v.label}
+        <button class:active={view === v} aria-pressed={view === v} onclick={() => (view = v)}>
+          {t.views[v]}
         </button>
       {/each}
     </nav>
@@ -98,26 +96,24 @@
 
   {#if missing}
     <p class="empty">
-      <span class="legible"><a href={resolve('/results')}>See the current rankings</a>.</span>
+      <span class="legible"><a href={resolve('/results')}>{t.seeCurrent}</a>.</span>
     </p>
   {:else if view === 'disagree'}
     {#if split.error}
-      <p class="empty"><span class="legible">Couldn’t load results: {split.error.message}</span></p>
+      <p class="empty"><span class="legible">{t.loadError(split.error.message)}</span></p>
     {:else if !split.data}
-      <div class="loader" aria-label="Loading"><i></i><i></i><i></i></div>
+      <div class="loader" aria-label={i18n.t.loading}><i></i><i></i><i></i></div>
     {:else if !split.data.posters.length}
       <p class="empty">
         <span class="legible">
-          Not enough to compare yet: each poster needs {split.data.minMatches} match-ups from designers and from
-          non-designers. So far: {split.data.designerVotes.toLocaleString()} designer votes,
-          {split.data.otherVotes.toLocaleString()} non-designer votes.
+          {t.notEnough(split.data.minMatches, split.data.designerVotes, split.data.otherVotes)}
         </span>
       </p>
     {:else}
       <section class="board">
-        <h2><span class="legible">Designers vs everyone else</span></h2>
+        <h2><span class="legible">{t.versusTitle}</span></h2>
         <p class="note">
-          <span class="legible">How often each poster wins with each group, biggest gap first.</span>
+          <span class="legible">{t.versusNote}</span>
         </p>
         <ol>
           {#each split.data.posters as p, i (p._id)}
@@ -127,17 +123,17 @@
               <div class="info">
                 <strong>{p.title}</strong>
                 <div class="versus">
-                  <span class="who">Designers</span>
+                  <span class="who">{t.designers}</span>
                   <div class="meter designers"><i style="width: {Math.max(2, p.designers.winRate * 100)}%"></i></div>
                   <span class="val">{pct(p.designers.winRate)} · #{p.designers.rank}</span>
-                  <span class="who">Others</span>
+                  <span class="who">{t.others}</span>
                   <div class="meter others"><i style="width: {Math.max(2, p.others.winRate * 100)}%"></i></div>
                   <span class="val">{pct(p.others.winRate)} · #{p.others.rank}</span>
                 </div>
               </div>
               <div class="nums">
                 <span class="rating">{gapLabel(p.gap)}</span>
-                <span class="record">{p.gap > 0 ? 'designers love it' : 'designers aren’t sold'}</span>
+                <span class="record">{p.gap > 0 ? t.designersLove : t.designersNotSold}</span>
               </div>
             </li>
           {/each}
@@ -145,15 +141,15 @@
       </section>
     {/if}
   {:else if overview.error}
-    <p class="empty"><span class="legible">Couldn’t load results: {overview.error.message}</span></p>
+    <p class="empty"><span class="legible">{t.loadError(overview.error.message)}</span></p>
   {:else if data}
     <section class="stats">
       {#each [
-        { label: 'Votes cast', value: data.stats.totalVotes },
-        { label: 'Voters', value: data.stats.voters },
-        { label: 'Posters', value: data.stats.posterCount },
-        { label: 'Votes today', value: data.stats.lastDay },
-        { label: 'Match-ups explored', value: coverage, decimals: coverage < 10 ? 1 : 0, suffix: '%' }
+        { label: t.stats.votes, value: data.stats.totalVotes },
+        { label: t.stats.voters, value: data.stats.voters },
+        { label: t.stats.posters, value: data.stats.posterCount },
+        { label: t.stats.today, value: data.stats.lastDay },
+        { label: t.stats.explored, value: coverage, decimals: coverage < 10 ? 1 : 0, suffix: '%' }
       ] as stat, i}
         <div class="stat" style="--i:{i}">
           <strong><CountUp value={stat.value} decimals={stat.decimals ?? 0} suffix={stat.suffix ?? ''} pixel /></strong>
@@ -166,16 +162,16 @@
       <p class="empty">
         <span class="legible">
           {#if archived}
-            No votes were cast{who}.
+            {t.noVotesArchived(segment)}
           {:else if view === 'all'}
-            No votes yet — <a href={resolve('/')}>go cast the first one</a>.
+            {t.noVotesYet[0]}<a href={resolve('/')}>{t.noVotesYet[1]}</a>{t.noVotesYet[2]}
           {:else}
-            No votes{who} yet.
+            {t.noVotesSegment(segment)}
           {/if}
         </span>
       </p>
     {:else}
-      <section class="podium" aria-label="Top three">
+      <section class="podium" aria-label={t.topThree}>
         {#each podium as p (p._id)}
           <div class="place place-{p.rank}" style="--i:{p.rank}">
             <div class="thumb">
@@ -184,7 +180,7 @@
             </div>
             <div class="label legible">
               <h3>{p.title}</h3>
-              <p>{p.rating} pts · {pct(p.winRate)} wins</p>
+              <p>{t.podium(p.rating, pct(p.winRate))}</p>
             </div>
             <div class="plinth"></div>
           </div>
@@ -193,8 +189,8 @@
 
       <section class="highlights">
         {#each [
-          { title: 'Closest rivalry', blurb: 'Neck and neck', pair: data.closest },
-          { title: 'Most lopsided', blurb: 'Not even close', pair: data.lopsided }
+          { title: t.closest, blurb: t.closestBlurb, pair: data.closest },
+          { title: t.lopsided, blurb: t.lopsidedBlurb, pair: data.lopsided }
         ] as h, i}
           {#if h.pair}
             <article class="highlight" style="--i:{i}">
@@ -204,7 +200,7 @@
               </header>
               <div class="duel">
                 <img src={posterSrc(h.pair.a.image)} alt={h.pair.a.title} />
-                <span class="vs">vs</span>
+                <span class="vs">{t.vs}</span>
                 <img src={posterSrc(h.pair.b.image)} alt={h.pair.b.title} />
               </div>
               <div class="split">
@@ -222,7 +218,7 @@
     {/if}
 
     <section class="board">
-      <h2><span class="legible">Every poster</span></h2>
+      <h2><span class="legible">{t.everyPoster}</span></h2>
       <ol>
         {#each data.posters as p, i (p._id)}
           <li
@@ -246,7 +242,7 @@
       </ol>
     </section>
   {:else}
-    <div class="loader" aria-label="Loading"><i></i><i></i><i></i></div>
+    <div class="loader" aria-label={i18n.t.loading}><i></i><i></i><i></i></div>
   {/if}
 </div>
 

@@ -3,17 +3,20 @@
   import { page } from '$app/state';
   import { resolve } from '$app/paths';
   import { api } from '../../convex/_generated/api';
+  import { i18n } from './i18n.svelte';
 
-  // Burger button with a small dropdown of the secondary pages and past competitions' results.
+  // Burger button with a small dropdown of every page and past competitions' results.
   // Closes on navigation, Escape, or a click anywhere outside it.
 
   let open = $state(false);
   let root: HTMLElement;
 
-  const links = [
-    { href: resolve('/about'), label: 'About' },
-    { href: resolve('/settings'), label: 'Settings' }
-  ];
+  const links = $derived([
+    { href: resolve('/'), label: i18n.t.menu.vote },
+    { href: resolve('/results'), label: i18n.t.menu.rankings },
+    { href: resolve('/about'), label: i18n.t.menu.about },
+    { href: resolve('/settings'), label: i18n.t.menu.settings }
+  ]);
 
   const archived = useQuery(api.competitions.archived, {});
   const past = $derived(
@@ -39,8 +42,8 @@
     onclick={() => (open = !open)}
     aria-expanded={open}
     aria-controls="site-menu"
-    aria-label="Menu"
-    title="Menu"
+    aria-label={i18n.t.menu.label}
+    title={i18n.t.menu.label}
   >
     <span></span><span></span><span></span>
   </button>
@@ -52,7 +55,7 @@
         </li>
       {/each}
       {#if past.length}
-        <li class="heading" role="presentation">Past competitions</li>
+        <li class="heading" role="presentation">{i18n.t.menu.past}</li>
         {#each past as l}
           <li>
             <a href={l.href} aria-current={page.url.pathname === l.href ? 'page' : undefined}>{l.label}</a>
@@ -115,6 +118,8 @@
     width: max-content;
     max-width: 260px;
     margin: 0;
+    display: grid;
+    gap: 4px;
     padding: 8px;
     list-style: none;
     background: var(--ink);

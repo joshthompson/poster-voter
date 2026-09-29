@@ -9,6 +9,7 @@
   import { resolve } from '$app/paths';
   import { sound } from '$lib/sound.svelte';
   import { designer } from '$lib/designer.svelte';
+  import { i18n } from '$lib/i18n.svelte';
   import { nextPair, pairKey } from '$lib/pairing';
   import { posterSrc, preload, voterId } from '$lib/util';
 
@@ -32,7 +33,7 @@
   let chosen = $state<number | null>(null);
   let result = $state<{ pct: number[]; total: number } | null>(null);
   let sparks = $state<Spark[]>([]);
-  let error = $state<string | null>(null);
+  let error = $state(false);
   let round = $state(0);
   let streak = $state(0);
 
@@ -97,7 +98,7 @@
     pair = next;
     chosen = null;
     result = null;
-    error = null;
+    error = false;
     round++;
     phase = 'enter';
 
@@ -151,7 +152,7 @@
       result = { pct: i === 0 ? [w, 100 - w] : [100 - w, w], total };
       streak = w >= 50 ? streak + 1 : 0;
     } catch (e) {
-      error = 'That vote got lost in the dots. Try the next pair!';
+      error = true;
       console.error(e);
     }
     revealTimer = setTimeout(advance, REVEAL_MS);
@@ -193,70 +194,60 @@
   });
 
   const verdict = $derived.by(() => {
-    if (error) return error;
+    const v = i18n.t.vote.verdict;
+    if (error) return i18n.t.vote.error;
     if (!result || chosen === null) return '';
+    // Being the only vote on a pair says nothing about the crowd.
+    if (result.total === 1) return '';
     const mine = result.pct[chosen];
-    if (result.total === 1) return 'First ever vote on this match-up!';
-    if (mine === 50) return 'A perfect tie. The dots are trembling.';
-    if (mine >= 80) return 'Obviously. Almost everyone agrees.';
-    if (mine > 50) return streak >= 3 ? `In tune with the crowd — ${streak} in a row!` : 'You’re with the crowd.';
-    if (mine <= 20) return 'A true contrarian. Iconic.';
-    return 'Bold taste — you’re in the minority.';
+    if (mine === 50) return v.tie;
+    if (mine >= 80) return v.obvious;
+    if (mine > 50) return streak >= 3 ? v.streak(streak) : v.crowd;
+    if (mine <= 20) return v.contrarian;
+    return v.minority;
   });
+
+  const noPostersBody = $derived(i18n.t.vote.noPostersBody);
 </script>
 
 <svelte:window onkeydown={onKey} />
 
 <svelte:head>
-  <title>Poster Vote</title>
+  <title>{i18n.t.brand}</title>
 </svelte:head>
 
 <section class="stage" data-phase={phase}>
   {#if posters.error}
     <div class="message legible">
-      <h2>Couldn’t reach the poster vault.</h2>
+      <h2>{i18n.t.vote.vaultError}</h2>
       <p>{posters.error.message}</p>
     </div>
   {:else if !posters.isLoading && list.length < 2}
     <div class="message legible">
-      <h2>No posters yet</h2>
-      <p>Drop images into <code>posters/</code> and run <code>pnpm posters:sync</code>.</p>
+      <h2>{i18n.t.vote.noPosters}</h2>
+      <p>{noPostersBody[0]}<code>posters/</code>{noPostersBody[1]}<code>pnpm posters:sync</code>{noPostersBody[2]}</p>
     </div>
   {:else if designer.value === null}
     <div class="intro">
-      <h2 class="question"><PixelText text="Are you a designer?" /></h2>
+      <h2 class="question"><PixelText text={i18n.t.designerQuestion} /></h2>
       <div class="choices">
-        <span class="pop" style="--i:1"><Button label="Yes" variant="ink" onclick={() => answer(true)} /></span>
-        <span class="pop" style="--i:2"><Button label="No" variant="ink" onclick={() => answer(false)} /></span>
+        <span class="pop" style="--i:1"><Button label={i18n.t.yes} variant="ink" onclick={() => answer(true)} /></span>
+        <span class="pop" style="--i:2"><Button label={i18n.t.no} variant="ink" onclick={() => answer(false)} /></span>
       </div>
     </div>
   {:else if !started}
     <div class="intro">
-      <span class="pop wobbly"><Button label="Start voting" onclick={start} /></span>
+      <span class="pop wobbly"><Button label={i18n.t.vote.start} onclick={start} /></span>
     </div>
   {:else if phase === 'done'}
     <div class="message legible">
-      <h2>That’s every pair!</h2>
-      <p>
-        You’ve voted on all {totalPairs.toLocaleString()} pairs of the current posters. Come back when new ones
-        go up.
-      </p>
-      <a class="ghost next" href={resolve('/results')}>See the rankings →</a>
+      <h2>{i18n.t.vote.doneTitle}</h2>
+      <p>{i18n.t.vote.doneBody(totalPairs)}</p>
+      <a class="ghost next" href={resolve('/results')}>{i18n.t.vote.seeRankings}</a>
     </div>
   {:else if !pair}
-    <div class="loader" aria-label="Loading"><i></i><i></i><i></i></div>
+    <div class="loader" aria-label={i18n.t.loading}><i></i><i></i><i></i></div>
   {:else}
-    <div class="headline">
-      {#key phase === 'reveal' || phase === 'exit' ? `v${round}` : `p${round}`}
-        {#if (phase === 'reveal' || phase === 'exit') && (result || error)}
-          <p class="verdict legible">
-            {verdict}
-            {#if result}<span class="count">{result.total.toLocaleString()} vote{result.total === 1 ? '' : 's'} on this pair</span>{/if}
-          </p>
-        {/if}
-      {/key}
-    </div>
-
     {#key round}
       <div class="pair">
         {#each pair as poster, i (poster._id)}
@@ -266,7 +257,7 @@
             class:rejected={chosen !== null && chosen !== i}
             disabled={phase !== 'choose'}
             onclick={() => vote(i)}
-            aria-label="Vote for {poster.title}"
+            aria-label={i18n.t.vote.voteFor(poster.title)}
           >
             <div class="float">
               <div class="frame">
@@ -282,7 +273,7 @@
               {#if result}
                 <div class="sticker" class:winner={result.pct[i] >= result.pct[1 - i]}>
                   <strong><CountUp value={result.pct[i]} duration={1100} suffix="%" /></strong>
-                  <small>{chosen === i ? 'your pick' : 'of voters'}</small>
+                  <small>{chosen === i ? i18n.t.vote.yourPick : i18n.t.vote.ofVoters}</small>
                 </div>
               {/if}
               <div class="caption legible">{poster.title}</div>
@@ -306,11 +297,21 @@
 
     <div class="footer">
       {#if phase === 'choose'}
-        <button class="ghost" onclick={skip}>Can’t decide? Skip →</button>
+        <button class="ghost" onclick={skip}>{i18n.t.vote.skip}</button>
       {:else if phase === 'reveal' && (result || error)}
-        <button class="ghost next" onclick={advance}>Next pair →</button>
+        <button class="ghost next" onclick={advance}>{i18n.t.vote.next}</button>
       {/if}
     </div>
+
+    <!-- Floats over the stage so it never moves the posters. -->
+    {#key round}
+      {#if (phase === 'reveal' || phase === 'exit') && verdict}
+        <p class="verdict" class:leaving={phase === 'exit'}>
+          <span>{verdict}</span>
+          {#if result}<small class="count">{i18n.t.vote.votesOnPair(result.total)}</small>{/if}
+        </p>
+      {/if}
+    {/key}
   {/if}
 </section>
 
@@ -323,38 +324,74 @@
     --w: min(34vw, calc((100cqh - var(--extra)) * 0.75), 440px);
     height: 100dvh;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto;
     justify-items: center;
     align-items: center;
     padding: clamp(76px, 12dvh, 112px) 16px 24px;
+    position: relative;
     overflow: hidden;
   }
 
-  /* ── Headline ─────────────────────────────── */
-  .headline {
-    align-self: end;
-    min-height: 4.5em;
-    display: grid;
-    place-items: end center;
-    text-align: center;
-    padding-bottom: clamp(12px, 2.5dvh, 32px);
-  }
+  /* ── Verdict bubble ───────────────────────── */
+  /* Centred halfway between the middle of the stage and its bottom-right corner, but kept on screen. */
   .verdict {
+    --size: clamp(190px, 21vw, 280px);
+    --edge: 20px;
+    position: absolute;
+    left: min(75%, 100% - var(--size) / 2 - var(--edge));
+    top: min(75%, 100% - var(--size) / 2 - var(--edge));
+    z-index: 5;
+    width: var(--size);
+    height: var(--size);
+    translate: -50% -50%;
     margin: 0;
-    padding: 0.25em 0.6em 0.35em;
-    border-radius: 0.5em;
-    font-size: clamp(22px, 3.4vw, 42px);
+    padding: calc(var(--size) * 0.16);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5em;
+    overflow: hidden;
+    border-radius: 50%;
+    text-align: center;
+    background: white;
+    color: var(--ink);
+    font-size: calc(var(--size) * 0.085);
     font-weight: 700;
-    letter-spacing: -0.03em;
-    animation: pop-in 0.6s var(--spring) both;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    box-shadow:
+      0 2px 4px rgba(31, 26, 36, 0.06),
+      0 24px 60px -18px rgba(31, 26, 36, 0.45);
+    pointer-events: none;
+    animation: bubble-in 0.7s var(--spring) both 0.25s;
+  }
+  .verdict.leaving {
+    animation: bubble-out 0.4s var(--smooth) forwards;
   }
   .count {
-    display: block;
-    margin-top: 0.35em;
-    font-size: 0.45em;
+    font-size: 0.6em;
     font-weight: 500;
     letter-spacing: 0;
     color: var(--muted);
+  }
+  @keyframes bubble-in {
+    from {
+      transform: scale(0) rotate(-30deg);
+    }
+    to {
+      transform: scale(1) rotate(-6deg);
+    }
+  }
+  @keyframes bubble-out {
+    from {
+      transform: scale(1) rotate(-6deg);
+    }
+    to {
+      transform: scale(0) rotate(20deg);
+      opacity: 0;
+    }
   }
   @keyframes pop-in {
     from {
@@ -705,7 +742,7 @@
   }
 
   .intro {
-    grid-row: 2;
+    grid-row: 1;
     display: grid;
     justify-items: center;
     gap: clamp(24px, 4dvh, 40px);
@@ -738,7 +775,7 @@
   }
 
   .message {
-    grid-row: 2;
+    grid-row: 1;
     padding: 24px 32px;
     border-radius: 24px;
     text-align: center;
@@ -757,7 +794,7 @@
   }
 
   .loader {
-    grid-row: 2;
+    grid-row: 1;
     display: flex;
     gap: 14px;
   }
@@ -805,8 +842,9 @@
     .caption {
       display: none;
     }
-    .headline {
-      min-height: 3.2em;
+    .verdict {
+      --size: clamp(160px, 44vw, 220px);
+      --edge: 12px;
     }
   }
 </style>

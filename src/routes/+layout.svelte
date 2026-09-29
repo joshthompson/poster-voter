@@ -7,6 +7,7 @@
   import Menu from '$lib/Menu.svelte';
   import PolkaDots from '$lib/PolkaDots.svelte';
   import { sound } from '$lib/sound.svelte';
+  import { i18n } from '$lib/i18n.svelte';
   import '../app.css';
 
   let { children } = $props();
@@ -14,7 +15,21 @@
   const configured = Boolean(PUBLIC_CONVEX_URL);
   if (configured) setupConvex(PUBLIC_CONVEX_URL);
 
-  const onResults = $derived(page.route.id?.startsWith('/results'));
+  const setup = $derived(i18n.t.header.setupBody);
+  const onVoting = $derived(page.route.id === '/');
+
+  // The pill hides once it no longer fits beside the logo; the burger menu has the same links.
+  let slot: HTMLElement | undefined = $state();
+  let pill: HTMLElement | undefined = $state();
+  let pillFits = $state(true);
+  $effect(() => {
+    if (!slot || !pill) return;
+    const check = () => (pillFits = pill!.offsetWidth <= slot!.clientWidth);
+    const ro = new ResizeObserver(check);
+    ro.observe(slot);
+    ro.observe(pill);
+    return () => ro.disconnect();
+  });
 </script>
 
 <svelte:window onpointerdown={() => sound.unlock()} onkeydown={() => sound.unlock()} />
@@ -26,8 +41,8 @@
     class="mute"
     onclick={() => sound.toggle()}
     aria-pressed={sound.muted}
-    aria-label={sound.muted ? 'Unmute sound' : 'Mute sound'}
-    title={sound.muted ? 'Unmute' : 'Mute'}
+    aria-label={sound.muted ? i18n.t.header.unmuteLabel : i18n.t.header.muteLabel}
+    title={sound.muted ? i18n.t.header.unmute : i18n.t.header.mute}
   >
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
       <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />
@@ -48,11 +63,16 @@
     <Logo />
   </a>
   <nav>
-    {#if onResults}
-      <a class="pill" href={resolve('/')}>← Keep voting</a>
-    {:else}
-      <a class="pill" href={resolve('/results')}>Rankings →</a>
-    {/if}
+    <div class="slot" bind:this={slot}>
+      <a
+        class="pill"
+        class:hidden={!pillFits}
+        bind:this={pill}
+        href={onVoting ? resolve('/results') : resolve('/')}
+      >
+        {onVoting ? i18n.t.header.rankings : i18n.t.header.keepVoting}
+      </a>
+    </div>
     {#if configured}<Menu />{/if}
   </nav>
 </header>
@@ -63,8 +83,8 @@
   {:else}
     <div class="setup-wrap">
       <div class="setup legible">
-      <h1>Almost there</h1>
-        <p>Add your Convex URL to <code>.env.local</code> (or run <code>pnpm dev</code> to set it up).</p>
+        <h1>{i18n.t.header.setupTitle}</h1>
+        <p>{setup[0]}<code>.env.local</code>{setup[1]}<code>pnpm dev</code>{setup[2]}</p>
       </div>
     </div>
   {/if}
@@ -116,10 +136,19 @@
   }
   nav {
     grid-column: 3;
-    justify-self: end;
+    justify-self: stretch;
+    min-width: 0;
     display: flex;
+    justify-content: flex-end;
     align-items: center;
     gap: 10px;
+  }
+  /* Takes the space left beside the logo; the pill is hidden when it's wider than that. */
+  .slot {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-end;
   }
   @media (max-width: 560px) {
     header {
@@ -140,9 +169,17 @@
       grid-column: 1;
       justify-self: center;
     }
+    nav {
+      max-width: 100%;
+    }
+    .slot {
+      flex: 0 1 auto;
+    }
   }
   .pill {
     display: inline-block;
+    flex: none;
+    white-space: nowrap;
     padding: 0.6em 1.1em;
     border-radius: 999px;
     background: var(--ink);
@@ -157,6 +194,9 @@
       padding: 0.5em 0.9em;
       font-size: 13px;
     }
+  }
+  .pill.hidden {
+    visibility: hidden;
   }
   .pill:hover {
     transform: translateY(-2px) rotate(-2deg) scale(1.05);

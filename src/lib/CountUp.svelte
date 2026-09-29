@@ -1,6 +1,7 @@
 <script lang="ts">
   import PixelText from './PixelText.svelte';
   import { tween } from './util';
+  import { i18n } from './i18n.svelte';
 
   // `pixel` draws the number in the pixel letters, coloured like the surrounding text.
   let { value, duration = 1200, decimals = 0, suffix = '', pixel = false }: {
@@ -19,7 +20,7 @@
   });
 
   const text = $derived(
-    shown.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix
+    i18n.num(shown, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix
   );
 </script>
 
