@@ -37,7 +37,7 @@ jobs:
         run: pnpm exec convex deploy --cmd-url-env-var-name PUBLIC_CONVEX_URL --cmd "pnpm exec vite build"
         env:
           CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
-          BASE_PATH: ${{ vars.BASE_PATH || format('/{0}', github.event.repository.name) }}
+          BASE_PATH: ${{ vars.BASE_PATH }}
 
       - run: touch build/.nojekyll
 

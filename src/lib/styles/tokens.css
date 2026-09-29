@@ -1,0 +1,20 @@
+/* Design tokens: colours, surfaces, shadows and easing shared by every component. */
+:root {
+  --paper: #fff7ee;
+  --ink: #1f1a24;
+  --muted: #6d6472;
+  --red: #ff3b5c;
+  --yellow: #ffb000;
+  --card: #ffffff;
+
+  /* Frosted white panels that sit over the polka dots. */
+  --glass: rgba(255, 255, 255, 0.85);
+  --glass-blur: blur(10px);
+  --shadow-card: 0 16px 40px -22px rgba(31, 26, 36, 0.45);
+  --shadow-lift: 0 20px 50px -16px rgba(31, 26, 36, 0.45);
+
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --smooth: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: light;
+}

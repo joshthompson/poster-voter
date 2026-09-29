@@ -1,4 +1,4 @@
-# Poster Voter
+# Poster Vote
 
 Two posters fly out, you pick your favourite, and then you see how everyone else voted on that pair. Every vote updates an Elo rating, and `/results` shows the live rankings.
 
@@ -65,6 +65,24 @@ Titles default to the filename (`001.jpg` becomes "No. 1"). To set your own, add
 | `pnpm ship`              | `deploy:web` and then `posters:sync:prod`                                       |
 
 Note: `pnpm deploy` is a built-in pnpm command, so the full release script is called `ship`.
+
+## Code layout
+
+Routes in `src/routes/` are thin: each page composes components from `src/lib/`.
+
+| Folder                    | What goes there                                                                     |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `lib/components/ui/`      | Small reusable pieces with no app knowledge: buttons, pills, cards, meters, loader  |
+| `lib/components/pixel/`   | The hand-drawn pixel lettering (`PixelText`, `Logo`) and its glyph lookup           |
+| `lib/components/layout/`  | The site frame: header, menu, polka-dot background, page container                  |
+| `lib/features/<feature>/` | Everything for one part of the site (`vote`, `results`, `settings`, `designer`): its components, logic and types, side by side |
+| `lib/services/`           | Browser-facing services: `storage` (all localStorage access), voter id, sound       |
+| `lib/state/`              | Shared app state, as rune classes                                                   |
+| `lib/i18n/`               | The current language, and one file of UI text per language in `locales/`            |
+| `lib/utils/`              | Small pure helpers                                                                  |
+| `lib/styles/`             | Global CSS: design tokens, element defaults, the `.legible` utility, shared keyframes |
+
+Import Convex's generated code through the `$convex` alias, e.g. `import { api } from '$convex/api'`.
 
 ## Deploying to GitHub Pages
 

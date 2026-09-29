@@ -40,9 +40,11 @@ export const cast = mutation({
     winnerId: v.id('posters'),
     loserId: v.id('posters'),
     voterId: v.string(),
-    designer: v.optional(v.boolean())
+    designer: v.optional(v.boolean()),
+    country: v.optional(v.string()),
+    city: v.optional(v.string())
   },
-  handler: async (ctx, { winnerId, loserId, voterId, designer }) => {
+  handler: async (ctx, { winnerId, loserId, voterId, designer, country, city }) => {
     if (winnerId === loserId) throw new ConvexError('A poster cannot beat itself');
     const winner = await ctx.db.get(winnerId);
     const loser = await ctx.db.get(loserId);
@@ -57,7 +59,9 @@ export const cast = mutation({
       winnerId,
       loserId,
       voterId: voterId.slice(0, 64),
-      designer
+      designer,
+      country: country?.slice(0, 2).toUpperCase() || undefined,
+      city: city?.slice(0, 80) || undefined
     });
 
     const expected = 1 / (1 + 10 ** ((loser.rating - winner.rating) / 400));

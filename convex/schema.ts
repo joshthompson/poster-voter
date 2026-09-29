@@ -36,7 +36,11 @@ export default defineSchema({
     loserId: v.id('posters'),
     voterId: v.string(),
     // Whether the voter said they're a designer. Missing on votes from before we asked.
-    designer: v.optional(v.boolean())
+    designer: v.optional(v.boolean()),
+    // Roughly where the voter was, looked up from their IP in the browser (the IP isn't kept).
+    // ISO 3166 two-letter code, e.g. "SE". Missing on older votes or when the lookup failed.
+    country: v.optional(v.string()),
+    city: v.optional(v.string())
   })
     .index('by_voter', ['voterId'])
     .index('by_competition', ['competitionId']),
