@@ -14,6 +14,7 @@ export function verdictFor(
   const mine = result.pct[chosen];
   const v = t.verdict;
   if (mine === 50) return v.tie;
+  if (mine === 100) return v.unanimous;
   if (mine >= 80) return v.obvious;
   if (mine > 50) return streak >= 3 ? v.streak(streak) : v.crowd;
   if (mine <= 20) return v.contrarian;

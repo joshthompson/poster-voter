@@ -55,6 +55,7 @@ export const en = {
     error: 'That vote got lost in the dots. Try the next pair!',
     verdict: {
       tie: 'A perfect tie. The dots are trembling.',
+      unanimous: 'Unanimous. Everyone agrees.',
       obvious: 'Obviously. Almost everyone agrees.',
       streak: (n: number) => `In tune with the crowd — ${num(n)} in a row!`,
       crowd: 'You’re with the crowd.',

@@ -54,6 +54,7 @@ export const sv: Messages = {
     error: 'Rösten försvann bland prickarna. Prova nästa par!',
     verdict: {
       tie: 'Helt oavgjort. Prickarna darrar.',
+      unanimous: 'Enhälligt. Alla håller med.',
       obvious: 'Självklart. Nästan alla håller med.',
       streak: (n: number) => `I takt med massan — ${num(n)} i rad!`,
       crowd: 'Du håller med de flesta.',
