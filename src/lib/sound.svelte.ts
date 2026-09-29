@@ -23,9 +23,9 @@ const barShift = (bar: number) => BASS_ROOTS[bar] - BASS_ROOTS[0];
 
 function readMuted() {
   try {
-    return localStorage.getItem(MUTE_KEY) === '1';
+    return localStorage.getItem(MUTE_KEY) !== '0';
   } catch {
-    return false;
+    return true;
   }
 }
 
