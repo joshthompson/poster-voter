@@ -10,6 +10,7 @@
   import DesignerChoice from '$lib/features/designer/DesignerChoice.svelte';
   import { designer } from '$lib/state/designer.svelte';
   import { sound } from '$lib/services/sound.svelte';
+  import { location } from '$lib/services/location';
   import { voterId } from '$lib/services/voter';
   import { i18n } from '$lib/i18n/index.svelte';
   import PosterCard from './PosterCard.svelte';
@@ -23,6 +24,7 @@
   // (which also starts the music), then shows pair after pair.
 
   const me = voterId();
+  location(); // start the lookup now so it's ready by the first vote
   const client = useConvexClient();
   const posters = useQuery(api.posters.list, {});
   const myVotes = useQuery(api.votes.mine, { voterId: me });
@@ -33,12 +35,13 @@
   const session = new VoteSession({
     posters: () => list,
     votedKeys: () => votedKeys,
-    cast: (winner, loser) =>
+    cast: async (winner, loser) =>
       client.mutation(api.votes.cast, {
         winnerId: winner._id,
         loserId: loser._id,
         voterId: me,
-        designer: designer.value ?? undefined
+        designer: designer.value ?? undefined,
+        ...(await location())
       })
   });
 
