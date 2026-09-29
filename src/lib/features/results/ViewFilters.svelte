@@ -26,7 +26,7 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 8px;
-    margin: 0 0 clamp(32px, 6vw, 56px);
+    margin: 0 0 3rem;
     animation: rise 0.8s var(--smooth) 0.4s both;
   }
   @media (max-width: 560px) {

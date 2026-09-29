@@ -143,6 +143,15 @@ export const sv: Messages = {
     lopsidedBlurb: 'Inte ens nära',
     vs: 'vs',
     everyPoster: 'Alla affischer',
+    places: {
+      title: 'Var rösterna kommer ifrån',
+      note: (votes: number, countries: number) =>
+        `${num(votes)} ${plural(votes, 'röst', 'röster')} från ${num(countries)} ${plural(countries, 'land', 'länder')} hittills.`,
+      localTitle: 'Lokala favoriter',
+      localNote: (min: number) => `Affischen varje stad väljer oftast. En stad behöver ${num(min)} röster för att räknas.`,
+      localPick: 'Lokal favorit',
+      wonThere: (wins: number, matches: number) => `Vann ${num(wins)} av ${num(matches)} där`
+    },
     detail: {
       close: 'Stäng',
       rank: (rank: number) => `Nr ${num(rank)}`,
@@ -154,6 +163,8 @@ export const sv: Messages = {
       noVotes: 'inga röster än',
       headToHead: 'Mot varandra',
       noMatches: 'Den har inte mött någon annan affisch än.',
+      fans: 'Största fansen',
+      fanWins: (n: number) => `${num(n)} ${plural(n, 'vinst', 'vinster')}`,
       more: (n: number) => `och ${num(n)} till`
     }
   }

@@ -13,7 +13,7 @@
     line-height: 2;
     text-align: center;
     font-size: 20px;
-    margin: 0 0 64px;
+    margin: 0 0 3rem;
   }
   .note :global(a) {
     color: var(--red);

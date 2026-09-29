@@ -22,7 +22,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 14px;
-    margin-bottom: clamp(48px, 8vw, 88px);
+    margin-bottom: 3rem;
   }
   .stat {
     background: var(--glass);

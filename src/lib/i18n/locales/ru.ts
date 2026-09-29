@@ -147,6 +147,16 @@ export const ru: Messages = {
     lopsidedBlurb: 'Без шансов',
     vs: 'vs',
     everyPoster: 'Все постеры',
+    places: {
+      title: 'Откуда голосуют',
+      note: (votes: number, countries: number) =>
+        `${num(votes)} ${plural(votes, 'голос', 'голоса', 'голосов')} из ${num(countries)} ${plural(countries, 'страны', 'стран', 'стран')}.`,
+      localTitle: 'Местные фавориты',
+      localNote: (min: number) =>
+        `Постер, который чаще всего выбирают в каждом городе. Городу нужно ${num(min)} ${plural(min, 'голос', 'голоса', 'голосов')}, чтобы попасть сюда.`,
+      localPick: 'Местный фаворит',
+      wonThere: (wins: number, matches: number) => `Там: ${num(wins)} ${plural(wins, 'победа', 'победы', 'побед')} из ${num(matches)}`
+    },
     detail: {
       close: 'Закрыть',
       rank: (rank: number) => `№ ${num(rank)}`,
@@ -158,6 +168,8 @@ export const ru: Messages = {
       noVotes: 'голосов пока нет',
       headToHead: 'Личные встречи',
       noMatches: 'Он ещё не встречался с другими постерами.',
+      fans: 'Главные фанаты',
+      fanWins: (n: number) => `${num(n)} ${plural(n, 'победа', 'победы', 'побед')}`,
       more: (n: number) => `и ещё ${num(n)}`
     }
   }

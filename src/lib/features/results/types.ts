@@ -8,6 +8,8 @@ export type Overview = NonNullable<FunctionReturnType<typeof api.results.overvie
 export type RankedPoster = Overview['posters'][number];
 /** Two posters and how their head-to-heads went. */
 export type Duel = NonNullable<Overview['closest']>;
+/** Where the votes came from, and each busy city's favourite. */
+export type Places = Overview['places'];
 
 export type Disagreements = NonNullable<FunctionReturnType<typeof api.results.disagreements>>;
 export type SplitPoster = Disagreements['posters'][number];

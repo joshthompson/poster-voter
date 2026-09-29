@@ -23,7 +23,7 @@
 <style>
   .hero {
     text-align: center;
-    margin-bottom: clamp(32px, 6vw, 64px);
+    margin-bottom: 3rem;
   }
   h1 {
     /* Pixel letters: 4 screen px per art px, 2 on phones. */

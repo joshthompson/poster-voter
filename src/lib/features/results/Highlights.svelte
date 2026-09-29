@@ -28,6 +28,6 @@
     grid-template-columns: repeat(auto-fit, minmax(260px, 340px));
     justify-content: center;
     gap: 18px;
-    margin-bottom: clamp(56px, 9vw, 100px);
+    margin-bottom: 3rem;
   }
 </style>

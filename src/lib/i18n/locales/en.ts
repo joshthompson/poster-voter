@@ -146,6 +146,15 @@ export const en = {
     lopsidedBlurb: 'Not even close',
     vs: 'vs',
     everyPoster: 'Every poster',
+    places: {
+      title: 'Where the votes come from',
+      note: (votes: number, countries: number) =>
+        `${num(votes)} vote${s(votes)} from ${num(countries)} countr${countries === 1 ? 'y' : 'ies'} so far.`,
+      localTitle: 'Local favourites',
+      localNote: (min: number) => `The poster each city picks most. A city needs ${num(min)} votes to count.`,
+      localPick: 'Local pick',
+      wonThere: (wins: number, matches: number) => `Won ${num(wins)} of ${num(matches)} there`
+    },
     detail: {
       close: 'Close',
       rank: (rank: number) => `No. ${num(rank)}`,
@@ -157,6 +166,8 @@ export const en = {
       noVotes: 'no votes yet',
       headToHead: 'Head-to-head',
       noMatches: 'It hasn’t met another poster yet.',
+      fans: 'Biggest fans',
+      fanWins: (n: number) => `${num(n)} win${s(n)}`,
       more: (n: number) => `and ${num(n)} more`
     }
   }

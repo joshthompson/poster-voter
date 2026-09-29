@@ -36,7 +36,7 @@
     grid-template-columns: repeat(3, 1fr);
     align-items: end;
     gap: clamp(10px, 3vw, 32px);
-    margin-bottom: clamp(56px, 9vw, 100px);
+    margin-bottom: 3rem;
     text-align: center;
   }
   .place {

@@ -8,6 +8,7 @@
   import Highlights from './Highlights.svelte';
   import Leaderboard from './Leaderboard.svelte';
   import Note from './Note.svelte';
+  import Places from './Places.svelte';
   import Podium from './Podium.svelte';
   import PosterDetail from './PosterDetail.svelte';
   import ResultsHero from './ResultsHero.svelte';
@@ -106,6 +107,7 @@
     {:else}
       <Podium top={data.posters.slice(0, 3)} {onopen} />
       <Highlights closest={data.closest} lopsided={data.lopsided} />
+      <Places places={data.places} posters={data.posters} {onopen} />
     {/if}
 
     <Leaderboard posters={data.posters} {onopen} />

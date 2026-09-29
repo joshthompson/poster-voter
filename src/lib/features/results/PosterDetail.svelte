@@ -7,6 +7,7 @@
   import { i18n } from '$lib/i18n/index.svelte';
   import type { Segment } from '$lib/i18n/locales/en';
   import { posterSrc } from '$lib/utils/images';
+  import { countryName, flag } from '$lib/utils/places';
   import { pct } from './format';
   import type { RankedPoster } from './types';
 
@@ -95,6 +96,21 @@
               {/each}
             </ul>
           </section>
+
+          {#if detail.data.fans.length}
+            <section>
+              <h3>{t.detail.fans}</h3>
+              <ul class="fans">
+                {#each detail.data.fans as f, i (`${f.country}|${f.city}`)}
+                  <li class:first={i === 0}>
+                    <span class="flag" aria-hidden="true">{flag(f.country)}</span>
+                    <span>{f.city ?? countryName(f.country, i18n.lang)}</span>
+                    <strong>{t.detail.fanWins(f.wins)}</strong>
+                  </li>
+                {/each}
+              </ul>
+            </section>
+          {/if}
 
           <section>
             <h3>{t.detail.headToHead}</h3>
@@ -249,6 +265,31 @@
     color: var(--muted);
     font-weight: 400;
     font-size: 12px;
+  }
+
+  .fans {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .fans li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px 5px 8px;
+    border-radius: 99px;
+    background: rgba(31, 26, 36, 0.05);
+    font-size: 14px;
+  }
+  .fans li.first {
+    background: var(--yellow);
+  }
+  .fans strong {
+    font-size: 12px;
+  }
+  .flag {
+    font-size: 18px;
+    line-height: 1;
   }
 
   .opponents {
