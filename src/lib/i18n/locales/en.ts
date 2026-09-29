@@ -83,7 +83,18 @@ export const en = {
     title: 'About',
     madeBy: 'Made by',
     // Non-breaking spaces so a line only ever breaks between the names, never inside one.
-    names: 'Alisa Vasileva and Josh Thompson'
+    names: 'Alisa Vasileva and Josh Thompson',
+    elo: {
+      title: 'How the rankings work',
+      body: [
+        'Posters are ranked with the Elo rating system, the one used in chess. Every poster starts on 1000 points, and each vote moves points from the loser to the winner.',
+        'How many depends on who you beat: beating an equal poster wins 16 points, toppling a favourite wins up to 32, and beating an underdog wins only a few.',
+        'So a poster that keeps winning over many matches can outrank one with a perfect record from just a few. A gap of a few points is basically a tie.'
+      ],
+      // [before, link text, after]
+      more: ['Read more about the ', 'Elo rating system', ' on Wikipedia.'],
+      url: 'https://en.wikipedia.org/wiki/Elo_rating_system'
+    }
   },
 
   results: {

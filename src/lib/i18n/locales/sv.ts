@@ -80,7 +80,17 @@ export const sv: Messages = {
   about: {
     title: 'Om',
     madeBy: 'Gjord av',
-    names: 'Alisa Vasileva och Josh Thompson'
+    names: 'Alisa Vasileva och Josh Thompson',
+    elo: {
+      title: 'Så funkar topplistan',
+      body: [
+        'Affischerna rankas med Elo-systemet, samma som används i schack. Varje affisch börjar på 1000 poäng, och varje röst flyttar poäng från förloraren till vinnaren.',
+        'Hur många beror på vem man slår: att slå en jämbördig affisch ger 16 poäng, att fälla en favorit ger upp till 32, och att slå en underdog ger bara några få.',
+        'En affisch som vinner ofta över många dueller kan alltså gå förbi en med perfekt facit från bara några få. Några poängs skillnad är i praktiken oavgjort.'
+      ],
+      more: ['Läs mer om ', 'Elo-rating', ' på Wikipedia.'],
+      url: 'https://sv.wikipedia.org/wiki/Elo-rating'
+    }
   },
 
   results: {
