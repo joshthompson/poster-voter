@@ -14,3 +14,8 @@ export type Disagreements = ReturnType<typeof disagreements>;
 export type SplitPoster = Disagreements['posters'][number];
 
 export type PosterDetailData = ReturnType<typeof detail>;
+
+/** A link to a poster's own page, and what a click on it does instead (open it in the modal). */
+export type PosterLink = { href: string; onclick: (e: MouseEvent) => void };
+/** The link for any poster in the list. */
+export type LinkTo = (poster: { _id: RankedPoster['_id'] }) => PosterLink;

@@ -3,20 +3,15 @@
   import { i18n } from '$lib/i18n/index.svelte';
   import { posterSrc } from '$lib/utils/images';
   import { countryName, flag } from '$lib/utils/places';
-  import type { Places, RankedPoster } from './types';
+  import type { LinkTo, Places } from './types';
 
   // Where the votes come from: a flag for each country with its vote count, then each busy
-  // city's favourite poster in a sideways-scrolling carousel. Clicking a favourite calls `onopen`
-  // with it. Shows nothing until some votes have a location.
+  // city's favourite poster in a sideways-scrolling carousel. Each favourite links to its poster
+  // (see `linkTo`). Shows nothing until some votes have a location.
 
-  let {
-    places,
-    posters,
-    onopen
-  }: { places: Places; posters: RankedPoster[]; onopen: (poster: RankedPoster) => void } = $props();
+  let { places, linkTo }: { places: Places; linkTo: LinkTo } = $props();
 
   const t = $derived(i18n.t.results.places);
-  const byId = $derived(new Map(posters.map((p) => [p._id, p])));
   // Pinned-up posters lean a little, each a different way.
   const TILTS = [-1.5, 1, -0.5, 1.5, -1, 0.5];
 
@@ -78,9 +73,8 @@
       </div>
       <ul class="picks" bind:this={track} onscroll={edges}>
         {#each places.localPicks as pick, i (`${pick.country}|${pick.city}`)}
-          {@const poster = byId.get(pick.poster._id)}
           <li style="--i:{i}; --tilt:{TILTS[i % TILTS.length]}deg">
-            <button type="button" disabled={!poster} onclick={() => poster && onopen(poster)}>
+            <a class="pick" {...linkTo(pick.poster)}>
               <span class="where">
                 <span class="flag" aria-hidden="true">{flag(pick.country)}</span>
                 <span class="city">{pick.city}</span>
@@ -89,7 +83,7 @@
               <span class="label">{t.localPick}</span>
               <strong class="title">{pick.poster.title}</strong>
               <span class="record">{t.wonThere(pick.wins, pick.matches)}</span>
-            </button>
+            </a>
           </li>
         {/each}
       </ul>
@@ -193,7 +187,7 @@
     animation: rise 0.7s var(--spring) both;
     animation-delay: calc(var(--i) * 0.08s);
   }
-  button {
+  .pick {
     display: grid;
     /* One column exactly as wide as the card, so long titles wrap instead of widening it. */
     grid-template-columns: minmax(0, 1fr);
@@ -202,30 +196,25 @@
     width: 100%;
     height: 100%;
     padding: 16px 14px 18px;
-    border: 0;
     border-radius: 22px;
     background: var(--glass);
     backdrop-filter: var(--glass-blur);
     box-shadow: var(--shadow-card);
-    font: inherit;
     color: inherit;
+    text-decoration: none;
     text-align: center;
-    cursor: pointer;
     transition:
       transform 0.35s var(--spring),
       box-shadow 0.35s;
   }
   /* Lift by whole pixels only: rotating or scaling text resamples it and it blurs. */
-  button:hover:not(:disabled) {
+  .pick:hover {
     transform: translateY(-4px);
     box-shadow: 0 24px 44px -20px rgba(31, 26, 36, 0.5);
   }
-  button:focus-visible {
+  .pick:focus-visible {
     outline: 3px solid var(--red);
     outline-offset: 2px;
-  }
-  button:disabled {
-    cursor: default;
   }
   .where {
     display: flex;

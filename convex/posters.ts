@@ -9,23 +9,29 @@ import { requestRun, startRebuild } from './tally';
 export const posterVersion = (c: Doc<'competitions'>) => `${c._id}:${c.postersUpdatedAt ?? 0}`;
 
 /**
- * A competition's current posters (by slug, or the active one), with its id and the `version` of
- * the list. Pages keep the list and pass its version as `since`: if it's still current, `posters`
- * is null and nothing else is read, so a returning visitor is sent a few bytes instead of the list.
+ * A competition's current posters (by slug, or the active one), with its id, the ids of posters
+ * taken out of it, and the `version` of the list. Pages keep the list and pass its version as
+ * `since`: if it's still current, `posters` is null and nothing else is read, so a returning
+ * visitor is sent a few bytes instead of the list.
  */
 export const list = query({
   args: { competition: v.optional(v.string()), since: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const competition = await find(ctx, args.competition);
-    if (!competition) return { competitionId: null, version: '', posters: [] };
+    if (!competition) return { competitionId: null, version: '', posters: [], removed: [] };
     const competitionId = competition._id;
     const version = posterVersion(competition);
-    if (args.since === version) return { competitionId, version, posters: null };
+    if (args.since === version) return { competitionId, version, posters: null, removed: null };
     const posters = await ctx.db
       .query('posters')
       .withIndex('by_competition_active', (q) => q.eq('competitionId', competition._id).eq('active', true))
       .collect();
-    return { competitionId, version, posters: posters.map(({ _id, title, image }) => ({ _id, title, image })) };
+    return {
+      competitionId,
+      version,
+      posters: posters.map(({ _id, title, image }) => ({ _id, title, image })),
+      removed: competition.removed ?? []
+    };
   }
 });
 
@@ -71,6 +77,7 @@ export const sync = internalMutation({
     if (adopted.length) await ctx.scheduler.runAfter(0, internal.votes.backfill, {});
 
     const keys = new Set(posters.map((p) => p.key));
+    const removed = new Set(existingCompetition?.removed ?? []);
     let added = 0;
     let updated = 0;
     let deactivated = 0;
@@ -83,6 +90,7 @@ export const sync = internalMutation({
       if (existing) {
         if (existing.title === p.title && existing.image === p.image && existing.active) continue;
         await ctx.db.patch(existing._id, { title: p.title, image: p.image, active: true });
+        removed.delete(existing._id);
         updated++;
       } else {
         await ctx.db.insert('posters', { ...p, competitionId, active: true });
@@ -96,13 +104,16 @@ export const sync = internalMutation({
       .collect()) {
       if (!keys.has(p.key)) {
         await ctx.db.patch(p._id, { active: false });
+        removed.add(p._id);
         deactivated++;
       }
     }
 
     const changed = adopted.length + added + updated + deactivated > 0;
     if (!changed) return { competition: competition.title, archived, added, updated, deactivated };
-    if (existingCompetition) await ctx.db.patch(competitionId, { postersUpdatedAt: Date.now() });
+    if (existingCompetition) {
+      await ctx.db.patch(competitionId, { postersUpdatedAt: Date.now(), removed: [...removed] });
+    }
 
     // Standings mirror whether their poster is active, and the snapshots need rebuilding to match.
     for (const p of await ctx.db
@@ -166,9 +177,76 @@ export const merge = internalMutation({
       .unique();
     if (standing) await ctx.db.delete(standing._id);
     await ctx.db.delete(drop._id);
-    await ctx.db.patch(competition._id, { postersUpdatedAt: Date.now() });
+    await ctx.db.patch(competition._id, {
+      postersUpdatedAt: Date.now(),
+      removed: [...(competition.removed ?? []), drop._id]
+    });
     await startRebuild(ctx, competition._id);
 
     return { kept: keep.title, removed: drop.title, votesMoved: moved, votesDropped: dropped };
+  }
+});
+
+const REMOVE_BATCH = 2000;
+
+/**
+ * Take posters out of a competition and delete every vote they were in, then re-tally it from the
+ * votes left. Their pairs are skipped rather than reshuffling anyone's order. Also delete their
+ * files from posters/, or the next sync puts them back (with no votes). Run it once with
+ * `npx convex run`; it carries on through the votes a batch at a time until `done`.
+ */
+export const remove = internalMutation({
+  args: { competition: v.string(), keys: v.array(v.string()), after: v.optional(v.number()) },
+  handler: async (ctx, { competition: slug, keys, after }) => {
+    const competition = await ctx.db
+      .query('competitions')
+      .withIndex('by_slug', (q) => q.eq('slug', slug))
+      .unique();
+    if (!competition) throw new Error(`No competition "${slug}"`);
+    const posters = [];
+    for (const key of keys) {
+      const poster = await ctx.db
+        .query('posters')
+        .withIndex('by_competition_key', (q) => q.eq('competitionId', competition._id).eq('key', key))
+        .unique();
+      if (!poster) throw new Error(`Missing poster: ${key}`);
+      posters.push(poster);
+    }
+    const ids = new Set(posters.map((p) => p._id));
+
+    // The first batch takes the posters out; later ones only carry on through the votes.
+    if (after === undefined) {
+      for (const p of posters) {
+        if (p.active) await ctx.db.patch(p._id, { active: false });
+        const standing = await ctx.db
+          .query('standings')
+          .withIndex('by_poster', (q) => q.eq('posterId', p._id))
+          .unique();
+        if (standing) await ctx.db.delete(standing._id);
+      }
+      await ctx.db.patch(competition._id, {
+        postersUpdatedAt: Date.now(),
+        removed: [...new Set([...(competition.removed ?? []), ...ids])]
+      });
+    }
+
+    const votes = await ctx.db
+      .query('votes')
+      .withIndex('by_competition', (q) => q.eq('competitionId', competition._id).gt('_creationTime', after ?? 0))
+      .take(REMOVE_BATCH);
+    let deleted = 0;
+    for (const vote of votes) {
+      if (!ids.has(vote.winnerId) && !ids.has(vote.loserId)) continue;
+      await ctx.db.delete(vote._id);
+      deleted++;
+    }
+
+    const done = votes.length < REMOVE_BATCH;
+    if (done) await startRebuild(ctx, competition._id);
+    else {
+      const next = votes[votes.length - 1]._creationTime;
+      await ctx.scheduler.runAfter(0, internal.posters.remove, { competition: slug, keys, after: next });
+    }
+    return { removed: posters.map((p) => p.title), votesDeleted: deleted, done };
   }
 });

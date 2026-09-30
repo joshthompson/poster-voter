@@ -32,6 +32,7 @@
 
   const session = new VoteSession({
     posters: () => list,
+    removed: () => posters.removed,
     collection: () => posters.competitionId,
     cast: async (winner, loser) =>
       client.mutation(api.votes.cast, {

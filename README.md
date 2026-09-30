@@ -28,6 +28,8 @@ See `.env.example`. Both files are gitignored.
 
 Posters are voted on within a competition. One competition is active at a time. Past competitions are archived: their results stay at `/results/<slug>`, which is linked from the burger menu.
 
+Each poster has its own page at `/poster/<slug>/<name>`, where the name comes from its title (`Dungen – Vidrig Vår (Album)` becomes `dungen-vidrig-var-album`), so changing a title changes its link. On the rankings, clicking a poster opens the same detail in a modal and puts that link in the address bar.
+
 `posters/` holds the active competition. `posters/competition.json` names it:
 
 ```json
@@ -38,7 +40,9 @@ Put images (JPEG, PNG, WebP, or HEIC on macOS) in `posters/`, then run `pnpm pos
 
 1. converts and resizes each image into `static/posters/<slug>/` using macOS `sips`
 2. makes that competition the active one and archives any other
-3. upserts each poster in the competition, keyed by filename; posters whose files have been removed are deactivated, and their votes are kept
+3. upserts each poster in the competition, keyed by filename; posters whose files have been removed are deactivated, and their votes are kept (to delete their votes too, see `posters:remove` below)
+
+Each visitor sees the pairs in their own fixed order. Taking a poster out leaves gaps in it rather than reshuffling it, so nobody is shown pairs they've already voted on. Adding a poster does reshuffle it.
 
 To start a new competition, give `competition.json` a new slug and title, replace the images and `titles.json`, and sync. The old competition's images stay in `static/posters/<old slug>/` for its archive.
 
@@ -87,6 +91,7 @@ After a normal deploy nothing needs running: the first vote, or the hourly check
 | ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `npx convex run migrations:rebuild`                           | Recount every competition from its votes (the old rankings show until done)  |
 | `npx convex run posters:merge '{"competition":"<slug>","keepKey":"060.jpg","dropKey":"061.jpg"}'` | Fold a duplicate poster into another, then recount                      |
+| `npx convex run posters:remove '{"competition":"<slug>","keys":["069.jpg"]}'` | Take posters out and delete every vote they were in, then recount. Delete their files from `posters/` too, or the next sync brings them back |
 | `npx convex run migrations:tallyAll`                          | Start the tally for competitions that have never had one (e.g. old archives) |
 | `npx convex run migrations:cleanupLegacy`                     | Remove scores stored the old way (on posters and in `pairs`)                 |
 

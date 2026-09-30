@@ -3,8 +3,8 @@
   import { posterSrc } from '$lib/utils/images';
 
   // One row of a ranked list: rank, thumbnail, title with `children` under it, and a big number
-  // with a caption on the right. `top` colours the rank for the leaders. With `onclick` the whole
-  // row is a button.
+  // with a caption on the right. `top` colours the rank for the leaders. With `href` the whole
+  // row is a link, and `onclick` handles clicks on it.
 
   let {
     rank,
@@ -13,6 +13,7 @@
     value,
     caption,
     top = false,
+    href,
     onclick,
     children
   }: {
@@ -22,7 +23,8 @@
     value: string | number;
     caption: string;
     top?: boolean;
-    onclick?: () => void;
+    href?: string;
+    onclick?: (e: MouseEvent) => void;
     children: Snippet;
   } = $props();
 </script>
@@ -40,8 +42,8 @@
   </div>
 {/snippet}
 
-{#if onclick}
-  <button type="button" class="row clickable" {onclick}>{@render contents()}</button>
+{#if href}
+  <a class="row clickable" {href} {onclick}>{@render contents()}</a>
 {:else}
   <div class="row">{@render contents()}</div>
 {/if}
@@ -62,12 +64,8 @@
       box-shadow 0.3s;
   }
   .clickable {
-    width: 100%;
-    border: 0;
-    font: inherit;
     color: inherit;
-    text-align: left;
-    cursor: pointer;
+    text-decoration: none;
   }
   .clickable:focus-visible {
     outline: 3px solid var(--red);

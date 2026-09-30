@@ -8,7 +8,9 @@ import { storage } from './storage';
 // visit and after posters are synced. The query is live, so a sync reaches open pages too.
 
 export type PosterInfo = NonNullable<FunctionReturnType<typeof api.posters.list>['posters']>[number];
-type Cached = { version: string; posters: PosterInfo[] };
+type PosterId = PosterInfo['_id'];
+// `removed` is missing from lists stored before it was sent.
+type Cached = { version: string; posters: PosterInfo[]; removed?: PosterId[] };
 
 /** The posters of `competition` (a slug, or undefined for the active one), once the server has confirmed them. */
 export function usePosters(competition: () => string | undefined) {
@@ -25,7 +27,7 @@ export function usePosters(competition: () => string | undefined) {
   $effect(() => {
     const result = query.data;
     if (!result?.posters) return;
-    const list = { version: result.version, posters: result.posters };
+    const list = { version: result.version, posters: result.posters, removed: result.removed ?? [] };
     received[key] = list;
     storage.setJSON(key, list);
   });
@@ -37,6 +39,12 @@ export function usePosters(competition: () => string | undefined) {
       if (!result) return undefined;
       if (result.posters) return result.posters;
       return cached?.version === result.version ? cached.posters : undefined;
+    },
+    /** Ids of posters taken out of the competition, alongside `data`. */
+    get removed(): PosterId[] {
+      const result = query.data;
+      if (result?.posters) return result.removed ?? [];
+      return cached?.removed ?? [];
     },
     /** The competition's id, once the server has said; null if there isn't one. */
     get competitionId() {

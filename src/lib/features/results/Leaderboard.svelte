@@ -7,12 +7,12 @@
   import { pct } from './format';
   import Board from './Board.svelte';
   import RankRow from './RankRow.svelte';
-  import type { RankedPoster } from './types';
+  import type { LinkTo, RankedPoster } from './types';
 
-  // Every poster by rating. Rows slide to their new place as votes come in; clicking one
-  // calls `onopen` with it.
+  // Every poster by rating. Rows slide to their new place as votes come in; each links to its
+  // poster (see `linkTo`).
 
-  let { posters, onopen }: { posters: RankedPoster[]; onopen: (poster: RankedPoster) => void } = $props();
+  let { posters, linkTo }: { posters: RankedPoster[]; linkTo: LinkTo } = $props();
 
   // Meters span the lowest to the highest rating, with a sliver even for last place.
   const range = $derived.by(() => {
@@ -37,7 +37,7 @@
         value={p.rating}
         caption="{p.wins}–{p.losses} · {p.matches ? pct(p.winRate) : '—'}"
         top={p.rank <= 3}
-        onclick={() => onopen(p)}
+        {...linkTo(p)}
       >
         <Meter value={meter(p.rating)} />
       </RankRow>

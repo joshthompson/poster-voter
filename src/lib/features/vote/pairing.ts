@@ -6,6 +6,9 @@
 // 80 posters make 79 rounds of 40 pairs, and between them every pair comes up exactly once.
 // The rounds, and the pairs within each, are shuffled too. With an odd number, one poster sits
 // out each round, and its pair comes first in the next so it isn't left waiting.
+//
+// Posters taken out of the competition still count towards the order, but their pairs are left
+// as gaps, so taking one out doesn't reshuffle anyone's order. Adding a poster does.
 
 type Item = { _id: string };
 
@@ -28,12 +31,17 @@ function shuffle<T>(items: T[], random: () => number) {
   return items;
 }
 
-/** Every pair of `from` once, in the order `seed` gives, each with its sides picked at random. */
-export function pairOrder<T extends Item>(from: T[], seed: number): T[][] {
+/**
+ * Every pair of `from` once, in the order `seed` gives, each with its sides picked at random.
+ * Pairs with a poster in `removed` (ids of posters taken out) are null, keeping their places.
+ */
+export function pairOrder<T extends Item>(from: T[], seed: number, removed: string[] = []): (T[] | null)[] {
   const random = seeded(seed);
+  const present = new Set(from.map((p) => p._id));
+  const gone = new Set(removed.filter((id) => !present.has(id)));
   // Sorted first so the order depends only on which posters there are, not the order they came in.
-  const posters: (T | null)[] = shuffle(
-    [...from].sort((a, b) => (a._id < b._id ? -1 : 1)),
+  const posters: (Item | null)[] = shuffle(
+    [...from, ...[...gone].map((_id) => ({ _id }))].sort((a, b) => (a._id < b._id ? -1 : 1)),
     random
   );
   if (posters.length % 2) posters.push(null);
@@ -42,7 +50,7 @@ export function pairOrder<T extends Item>(from: T[], seed: number): T[][] {
 
   // The last poster stays put while the others rotate a place each round, meeting a new one each time.
   const rounds = Array.from({ length: n - 1 }, (_, r) => {
-    const pairs: T[][] = [];
+    const pairs: Item[][] = [];
     for (let i = 0; i < n / 2; i++) {
       const a = i ? posters[(r + i) % (n - 1)] : posters[n - 1];
       const b = posters[(r - i + n - 1) % (n - 1)];
@@ -57,5 +65,5 @@ export function pairOrder<T extends Item>(from: T[], seed: number): T[][] {
     const at = round.pairs.findIndex((p) => p.includes(waiting));
     round.pairs.unshift(...round.pairs.splice(at, 1));
   });
-  return rounds.flatMap((round) => round.pairs);
+  return rounds.flatMap((round) => round.pairs).map((pair) => (pair.some((p) => gone.has(p._id)) ? null : (pair as T[])));
 }

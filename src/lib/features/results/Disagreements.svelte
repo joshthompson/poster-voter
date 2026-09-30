@@ -6,12 +6,12 @@
   import { pct } from './format';
   import Board from './Board.svelte';
   import RankRow from './RankRow.svelte';
-  import type { SplitPoster } from './types';
+  import type { LinkTo, SplitPoster } from './types';
 
   // Posters designers and everyone else rate most differently, biggest gap first,
-  // with each group's win rate and rank side by side. Clicking one calls `onopen` with it.
+  // with each group's win rate and rank side by side. Each links to its poster (see `linkTo`).
 
-  let { posters, onopen }: { posters: SplitPoster[]; onopen: (poster: SplitPoster) => void } = $props();
+  let { posters, linkTo }: { posters: SplitPoster[]; linkTo: LinkTo } = $props();
 
   const t = $derived(i18n.t.results);
   const groups = $derived([
@@ -30,7 +30,7 @@
         value={t.gap(Math.round(Math.abs(p.gap) * 100))}
         caption={p.gap > 0 ? t.designersLove : t.designersNotSold}
         top={i < 3}
-        onclick={() => onopen(p)}
+        {...linkTo(p)}
       >
         <div class="versus">
           {#each groups as g}

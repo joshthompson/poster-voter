@@ -27,7 +27,10 @@ export default defineSchema({
     title: v.string(),
     active: v.boolean(),
     // When its poster list last changed, so pages can keep their copy until it does (see posters.list).
-    postersUpdatedAt: v.optional(v.number())
+    postersUpdatedAt: v.optional(v.number()),
+    // Posters taken out of it. Their pairs keep their places in each visitor's order and are
+    // skipped, so taking a poster out doesn't reshuffle anyone's order (see pairing.ts).
+    removed: v.optional(v.array(v.id('posters')))
   })
     .index('by_slug', ['slug'])
     .index('by_active', ['active']),

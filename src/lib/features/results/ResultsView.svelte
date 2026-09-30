@@ -1,6 +1,8 @@
 <script lang="ts">
   import { useQuery } from 'convex-svelte';
+  import { pushState } from '$app/navigation';
   import { resolve } from '$app/paths';
+  import { page } from '$app/state';
   import { api } from '$convex/api';
   import Loader from '$lib/components/ui/Loader.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
@@ -17,7 +19,8 @@
   import StatTiles from './StatTiles.svelte';
   import ViewFilters from './ViewFilters.svelte';
   import { disagreements, overview } from './hydrate';
-  import type { RankedPoster, View } from './types';
+  import { plainClick, posterHref, posterNames } from './links';
+  import type { LinkTo, View } from './types';
 
   // A competition's results: the active one, or the one named by `slug` (usually archived).
   // Each view reads its segment's snapshot (rebuilt at most every 15 minutes as votes come in), the
@@ -60,16 +63,36 @@
     main.data && posterList.data && !tallying ? overview(posters, main.data.snapshot, liveVotes) : undefined
   );
   const split = $derived(
-    view === 'disagree' && posterList.data && designerSnap.data !== undefined && otherSnap.data !== undefined
+    view === 'disagree' &&
+      competition &&
+      posterList.data &&
+      designerSnap.data !== undefined &&
+      otherSnap.data !== undefined
       ? disagreements(posters, designerSnap.data?.snapshot ?? null, otherSnap.data?.snapshot ?? null)
       : undefined
   );
   const splitError = $derived(designerSnap.error ?? otherSnap.error);
 
-  // The poster open in the detail modal, looked up in the live list so its numbers keep updating.
-  let openId = $state<RankedPoster['_id'] | null>(null);
-  const openPoster = $derived(data?.posters.find((p) => p._id === openId) ?? null);
-  const onopen = (p: { _id: RankedPoster['_id'] }) => (openId = p._id);
+  // Every poster links to its own page. A plain click opens it here in the modal instead, with
+  // the page's URL in the address bar to share, and Back closes it (shallow routing). Only
+  // shown once the competition has loaded, since the URL names it.
+  const names = $derived(posterNames(posters));
+  const linkTo: LinkTo = (p) => {
+    const href = posterHref(competition!.slug, names.get(p._id)!);
+    return {
+      href,
+      onclick: (e) => {
+        if (!plainClick(e)) return;
+        e.preventDefault();
+        pushState(href, { poster: p._id });
+      }
+    };
+  };
+
+  // The poster open in the modal, looked up in the live list so its numbers keep updating.
+  const openPoster = $derived(data?.posters.find((p) => p._id === page.state.poster) ?? null);
+  // Closing it goes back to the rankings' URL; after Back, it's already there.
+  const onclose = () => page.state.poster && history.back();
 
   const sub = $derived.by(() => {
     if (missing) return slug ? t.noCompetitionHere : t.noCompetition;
@@ -115,7 +138,7 @@
     {:else if !split.posters.length}
       <Note>{t.notEnough(split.minMatches, split.designerVotes, split.otherVotes)}</Note>
     {:else}
-      <Disagreements posters={split.posters} {onopen} />
+      <Disagreements posters={split.posters} {linkTo} />
     {/if}
   {:else if error}
     <Note>{t.loadError(error.message)}</Note>
@@ -133,18 +156,18 @@
         {/if}
       </Note>
     {:else}
-      <Podium top={data.posters.slice(0, 3)} {onopen} />
+      <Podium top={data.posters.slice(0, 3)} {linkTo} />
       <Highlights closest={data.closest} lopsided={data.lopsided} />
-      <Places places={data.places} posters={data.posters} {onopen} />
+      <Places places={data.places} {linkTo} />
     {/if}
 
-    <Leaderboard posters={data.posters} {onopen} />
+    <Leaderboard posters={data.posters} {linkTo} />
   {:else}
     <div class="loading"><Loader /></div>
   {/if}
 {/if}
 
-<PosterDetail poster={openPoster} {segment} {posterById} onclose={() => (openId = null)} />
+<PosterDetail poster={openPoster} {segment} {posterById} {onclose} />
 
 <style>
   .loading {

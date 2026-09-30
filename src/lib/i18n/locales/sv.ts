@@ -168,7 +168,10 @@ export const sv: Messages = {
       noMatches: 'Den har inte mött någon annan affisch än.',
       fans: 'Största fansen',
       fanWins: (n: number) => `${num(n)} ${plural(n, 'vinst', 'vinster')}`,
-      more: (n: number) => `och ${num(n)} till`
+      more: (n: number) => `och ${num(n)} till`,
+      allRankings: '← Hela topplistan',
+      noPoster: 'Det finns ingen affisch här.',
+      seeRankings: 'Se topplistan'
     }
   }
 };

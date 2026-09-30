@@ -173,7 +173,10 @@ export const ru: Messages = {
       noMatches: 'Он ещё не встречался с другими постерами.',
       fans: 'Главные фанаты',
       fanWins: (n: number) => `${num(n)} ${plural(n, 'победа', 'победы', 'побед')}`,
-      more: (n: number) => `и ещё ${num(n)}`
+      more: (n: number) => `и ещё ${num(n)}`,
+      allRankings: '← Весь рейтинг',
+      noPoster: 'Здесь нет такого постера.',
+      seeRankings: 'Смотреть рейтинг'
     }
   }
 };

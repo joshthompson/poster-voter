@@ -13,6 +13,8 @@ const EXIT_MS = 700;
 type Source = {
   /** The competition's posters (reactive). */
   posters: () => Poster[];
+  /** Ids of posters taken out of it, whose pairs are skipped (reactive). */
+  removed: () => string[];
   /** The collection (competition) they belong to (reactive): undefined until known, null if none. */
   collection: () => string | null | undefined;
   /** Record a vote; resolves to both posters' vote counts on this pair. */
@@ -104,17 +106,20 @@ export class VoteSession {
   }
 
   /**
-   * The pair at `at` in this visitor's order (default: where they're up to), or null once they've
-   * been through them all. Changing the posters reshuffles the order, but they carry on from the
-   * same place in it.
+   * The first pair from `from` in this visitor's order (default: where they're up to), or null
+   * once they've been through them all. Pairs with a poster since taken out are skipped. Adding
+   * posters reshuffles the order, but they carry on from the same place in it.
    */
-  #next(at?: number): Next | null {
+  #next(from?: number): Next | null {
     const collection = this.#source.collection();
     if (!collection) return null;
     const { seed, index } = this.#progress.get(collection);
-    at ??= index;
-    const pair = pairOrder(this.#source.posters(), seed)[at];
-    return pair ? { pair, collection, at } : null;
+    const order = pairOrder(this.#source.posters(), seed, this.#source.removed());
+    for (let at = from ?? index; at < order.length; at++) {
+      const pair = order[at];
+      if (pair) return { pair, collection, at };
+    }
+    return null;
   }
 
   async #show(next: Next | null) {

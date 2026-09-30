@@ -171,7 +171,11 @@ export const en = {
       noMatches: 'It hasn’t met another poster yet.',
       fans: 'Biggest fans',
       fanWins: (n: number) => `${num(n)} win${s(n)}`,
-      more: (n: number) => `and ${num(n)} more`
+      more: (n: number) => `and ${num(n)} more`,
+      // On the poster's own page.
+      allRankings: '← All rankings',
+      noPoster: 'There’s no poster here.',
+      seeRankings: 'See the rankings'
     }
   }
 };

@@ -36,7 +36,13 @@ export const cast = mutation({
     const loser = await ctx.db.get(loserId);
     if (!winner || !loser) throw new ConvexError('Poster not found');
     const competition = await getActive(ctx);
-    if (!competition || winner.competitionId !== competition._id || loser.competitionId !== competition._id) {
+    if (
+      !competition ||
+      winner.competitionId !== competition._id ||
+      loser.competitionId !== competition._id ||
+      !winner.active ||
+      !loser.active
+    ) {
       throw new ConvexError('Voting has closed on these posters');
     }
 

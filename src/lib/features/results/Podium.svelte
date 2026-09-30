@@ -2,12 +2,12 @@
   import { i18n } from '$lib/i18n/index.svelte';
   import { posterSrc } from '$lib/utils/images';
   import { pct } from './format';
-  import type { RankedPoster } from './types';
+  import type { LinkTo, RankedPoster } from './types';
 
-  // The top three on plinths: second, first, third from left to right. Clicking one calls
-  // `onopen` with it.
+  // The top three on plinths: second, first, third from left to right. Each links to its poster
+  // (see `linkTo`).
 
-  let { top, onopen }: { top: RankedPoster[]; onopen: (poster: RankedPoster) => void } = $props();
+  let { top, linkTo }: { top: RankedPoster[]; linkTo: LinkTo } = $props();
 
   const places = $derived([top[1], top[0], top[2]].filter(Boolean));
 </script>
@@ -15,7 +15,7 @@
 <section class="podium" aria-label={i18n.t.results.topThree}>
   {#each places as p (p._id)}
     <div class="place place-{p.rank}" style="--i:{p.rank}">
-      <button type="button" class="pick" onclick={() => onopen(p)}>
+      <a class="pick" {...linkTo(p)}>
         <div class="thumb">
           <img src={posterSrc(p.image)} alt="" />
           <span class="medal">{p.rank}</span>
@@ -24,7 +24,7 @@
           <h3>{p.title}</h3>
           <p>{i18n.t.results.podium(p.rating, pct(p.winRate))}</p>
         </div>
-      </button>
+      </a>
       <div class="plinth"></div>
     </div>
   {/each}
@@ -45,13 +45,8 @@
   }
   .pick {
     display: block;
-    width: 100%;
-    padding: 0;
-    border: 0;
-    background: none;
-    font: inherit;
     color: inherit;
-    cursor: pointer;
+    text-decoration: none;
   }
   .pick:focus-visible {
     outline: 3px solid var(--red);
