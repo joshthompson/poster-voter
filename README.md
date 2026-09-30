@@ -44,7 +44,7 @@ Put images (JPEG, PNG, WebP, or HEIC on macOS) in `posters/`, then run `pnpm pos
 2. makes that competition the active one and archives any other
 3. upserts each poster in the competition, keyed by filename; posters whose files have been removed are deactivated, and their votes are kept (to delete their votes too, see `posters:remove` below)
 
-Each visitor sees the pairs in their own fixed order. Taking a poster out leaves gaps in it rather than reshuffling it, so nobody is shown pairs they've already voted on. Adding a poster does reshuffle it.
+Each visitor sees the pairs in their own fixed order. Taking a poster out leaves gaps in it rather than reshuffling it, so nobody is shown pairs they've already voted on. Adding a poster does reshuffle it. Until a visitor has seen every poster, a progress bar fills as they go, and pairs of posters they've already seen are skipped, so it takes about half as many pairs as there are posters.
 
 To start a new competition, give `competition.json` a new slug and title, replace the images and `titles.json`, and sync. The old competition's images stay in `static/posters/<old slug>/` for its archive.
 

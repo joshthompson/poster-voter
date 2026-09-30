@@ -52,6 +52,10 @@ export const sv: Messages = {
     doneBody: (pairs: number) =>
       `Du har gått igenom alla ${num(pairs)} par av de nuvarande affischerna. Kom tillbaka när nya dyker upp.`,
     seeRankings: 'Se topplistan →',
+    seenAllTitle: 'Du har röstat på alla affischer!',
+    seenAllBody: '(Men det finns fortfarande många fler kombinationer att rösta på)',
+    continueVoting: 'Fortsätt rösta!',
+    progress: (seen: number, total: number) => `${num(seen)} av ${num(total)} affischer sedda`,
     votesOnPair: (n: number) => `${num(n)} ${plural(n, 'röst', 'röster')} på det här paret`,
     voteFor: (title: string) => `Rösta på ${title}`,
     yourPick: 'ditt val',

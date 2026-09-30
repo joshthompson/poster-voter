@@ -3,6 +3,7 @@
   import { resolve } from '$app/paths';
   import { api } from '$convex/api';
   import Button from '$lib/components/ui/Button.svelte';
+  import ButtonRow from '$lib/components/ui/ButtonRow.svelte';
   import Loader from '$lib/components/ui/Loader.svelte';
   import MessageCard from '$lib/components/ui/MessageCard.svelte';
   import Pill from '$lib/components/ui/Pill.svelte';
@@ -16,6 +17,7 @@
   import { voterId } from '$lib/services/voter';
   import { i18n } from '$lib/i18n/index.svelte';
   import PosterCard from './PosterCard.svelte';
+  import ProgressBar from './ProgressBar.svelte';
   import VerdictBubble from './VerdictBubble.svelte';
   import VsBadge from './VsBadge.svelte';
   import { VoteSession } from './session.svelte';
@@ -111,6 +113,14 @@
       <p>{t.doneBody(session.totalPairs)}</p>
       <Pill variant="red" href={resolve('/results')}>{t.seeRankings}</Pill>
     </MessageCard>
+  {:else if session.phase === 'seenAll'}
+    <MessageCard title={t.seenAllTitle}>
+      <p>{t.seenAllBody}</p>
+      <ButtonRow>
+        <Pill variant="red" onclick={() => session.carryOn()}>{t.continueVoting}</Pill>
+        <Pill href={resolve('/results')}>{t.seeRankings}</Pill>
+      </ButtonRow>
+    </MessageCard>
   {:else if !session.pair}
     <Loader />
   {:else}
@@ -136,10 +146,18 @@
     {/key}
 
     <div class="footer">
-      {#if session.phase === 'choose'}
-        <span class="appear"><Pill onclick={() => session.skip()}>{t.skip}</Pill></span>
-      {:else if session.revealed}
-        <span class="appear"><Pill variant="red" onclick={() => session.advance()}>{t.next}</Pill></span>
+      <div class="action">
+        <!-- An unseen button keeps this a button tall, so the bar below stays put as they come and go. -->
+        <span class="sizer" aria-hidden="true" inert><Pill>{t.skip}</Pill></span>
+        {#if session.phase === 'choose'}
+          <span class="appear"><Pill onclick={() => session.skip()}>{t.skip}</Pill></span>
+        {:else if session.revealed}
+          <span class="appear"><Pill variant="red" onclick={() => session.advance()}>{t.next}</Pill></span>
+        {/if}
+      </div>
+      {#if session.progress}
+        {@const { seen, total } = session.progress}
+        <ProgressBar {seen} {total} label={t.progress(seen, total)} />
       {/if}
     </div>
 
@@ -188,6 +206,20 @@
     align-self: start;
     min-height: 48px;
     padding-top: clamp(12px, 2.5dvh, 32px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .action {
+    display: grid;
+    justify-items: center;
+  }
+  .action > * {
+    grid-area: 1 / 1;
+  }
+  .sizer {
+    visibility: hidden;
   }
   .appear {
     display: inline-block;

@@ -53,6 +53,10 @@ export const en = {
     doneBody: (pairs: number) =>
       `You’ve been through all ${num(pairs)} pairs of the current posters. Come back when new ones go up.`,
     seeRankings: 'See the rankings →',
+    seenAllTitle: 'You’ve voted on every poster!',
+    seenAllBody: '(But there are still many more different combinations you can vote on)',
+    continueVoting: 'Continue voting!',
+    progress: (seen: number, total: number) => `${num(seen)} of ${num(total)} posters seen`,
     votesOnPair: (n: number) => `${num(n)} vote${s(n)} on this pair`,
     voteFor: (title: string) => `Vote for ${title}`,
     yourPick: 'your pick',

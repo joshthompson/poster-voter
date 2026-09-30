@@ -16,7 +16,7 @@
     padding: 24px 32px;
     border-radius: 24px;
     text-align: center;
-    max-width: 36ch;
+    max-width: 44ch;
     animation: pop-in 0.6s var(--spring) both;
   }
   h2 {

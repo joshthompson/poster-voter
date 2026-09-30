@@ -21,8 +21,11 @@ type Source = {
   cast: (winner: Poster, loser: Poster) => Promise<{ winnerVotes: number; loserVotes: number }>;
 };
 
-/** A pair to show, and where it is in the visitor's order for its collection. */
-type Next = { pair: Poster[]; collection: string; at: number };
+/**
+ * A pair to show, where it is in the visitor's order for its collection, how many posters they've
+ * been shown before it, and how many of its two are new to them.
+ */
+type Next = { pair: Poster[]; collection: string; at: number; seen: number; fresh: number };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -36,6 +39,11 @@ export class VoteSession {
   round = $state(0);
   /** Votes in a row that went with the crowd. */
   streak = $state(0);
+  /**
+   * How many of the posters they've been shown (counting this pair once it's voted on or skipped),
+   * out of how many there are. Null once they'd been shown them all before this pair.
+   */
+  progress = $state<{ seen: number; total: number } | null>(null);
 
   #source: Source;
   #progress = createProgress();
@@ -80,6 +88,7 @@ export class VoteSession {
     const [winner, loser] = [pair[i], pair[1 - i]];
     this.chosen = i;
     this.phase = 'reveal';
+    this.#count();
 
     try {
       const r = await this.#source.cast(winner, loser);
@@ -117,25 +126,54 @@ export class VoteSession {
   async advance() {
     clearTimeout(this.#revealTimer);
     this.phase = 'exit';
+    this.#count();
     // Voted or skipped, this pair is done with: carry on after it, this visit or the next.
     if (this.#shown) this.#progress.set(this.#shown.collection, this.#shown.at + 1);
     await wait(EXIT_MS);
+    // This pair showed them the last of the posters: say so before the next one.
+    if (this.progress && this.progress.seen >= this.progress.total) {
+      this.pair = null;
+      this.progress = null;
+      this.phase = 'seenAll';
+      return;
+    }
     await this.#show(this.#next());
+  }
+
+  /** Move on from the "you've seen every poster" message to the next pair. */
+  carryOn() {
+    if (this.phase === 'seenAll') this.#show(this.#next());
+  }
+
+  /** Count this pair's posters as seen, now it's been voted on or skipped. */
+  #count() {
+    if (this.progress && this.#shown) this.progress.seen = this.#shown.seen + this.#shown.fresh;
   }
 
   /**
    * The first pair from `from` in this visitor's order (default: where they're up to), or null
    * once they've been through them all. Pairs with a poster since taken out are skipped. Adding
    * posters reshuffles the order, but they carry on from the same place in it.
+   *
+   * Until they've been shown every poster, pairs of posters they've already seen are skipped too.
+   * The first round shows every poster once, but a poster taken out leaves its partner there
+   * without a pair, and that partner's next pair could be dozens of pairs later.
    */
   #next(from?: number): Next | null {
     const collection = this.#source.collection();
     if (!collection) return null;
     const { seed, index } = this.#progress.get(collection);
-    const order = pairOrder(this.#source.posters(), seed, this.#source.removed());
-    for (let at = from ?? index; at < order.length; at++) {
+    const posters = this.#source.posters();
+    const order = pairOrder(posters, seed, this.#source.removed());
+    const start = from ?? index;
+    // The pairs skipped hold only posters already seen, so every pair before `start` counts,
+    // shown or skipped, and what they've seen needn't be stored.
+    const unseen = new Set(posters.map((p) => p._id));
+    for (let at = 0; at < start; at++) order[at]?.forEach((p) => unseen.delete(p._id));
+    for (let at = start; at < order.length; at++) {
       const pair = order[at];
-      if (pair) return { pair, collection, at };
+      const fresh = pair?.filter((p) => unseen.has(p._id)).length ?? 0;
+      if (pair && (fresh || !unseen.size)) return { pair, collection, at, seen: posters.length - unseen.size, fresh };
     }
     return null;
   }
@@ -156,6 +194,8 @@ export class VoteSession {
     this.chosen = null;
     this.result = null;
     this.error = false;
+    const total = this.#source.posters().length;
+    this.progress = next.seen < total ? { seen: next.seen, total } : null;
     this.round++;
     this.phase = 'enter';
 

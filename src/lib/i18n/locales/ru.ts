@@ -54,6 +54,10 @@ export const ru: Messages = {
     doneBody: (pairs: number) =>
       `Вы прошли все пары текущих постеров — всего ${num(pairs)}. Возвращайтесь, когда появятся новые.`,
     seeRankings: 'Смотреть рейтинг →',
+    seenAllTitle: 'Вы оценили все постеры!',
+    seenAllBody: '(Но осталось ещё много других пар, за которые можно проголосовать)',
+    continueVoting: 'Голосовать дальше!',
+    progress: (seen: number, total: number) => `Просмотрено постеров: ${num(seen)} из ${num(total)}`,
     votesOnPair: (n: number) => `${num(n)} ${plural(n, 'голос', 'голоса', 'голосов')} в этой паре`,
     voteFor: (title: string) => `Голосовать за «${title}»`,
     yourPick: 'ваш выбор',
