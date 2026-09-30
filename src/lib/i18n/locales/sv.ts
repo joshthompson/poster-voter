@@ -15,6 +15,7 @@ export const sv: Messages = {
   yes: 'Ja',
   no: 'Nej',
   designerQuestion: 'Är du designer?',
+  coffee: 'Bjud oss på en kaffe',
 
   header: {
     mute: 'Stäng av ljud',

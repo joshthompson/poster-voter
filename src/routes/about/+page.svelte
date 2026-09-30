@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CoffeeButton from '$lib/components/layout/CoffeeButton.svelte';
   import Page from '$lib/components/layout/Page.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import PageTitle from '$lib/components/ui/PageTitle.svelte';
@@ -54,6 +55,7 @@
           </div>
         {/each}
       </div>
+      <div class="coffee"><CoffeeButton full /></div>
     </Card>
     <Card delay={0.3}>
       <h2>{t.elo.title}</h2>
@@ -140,6 +142,9 @@
     display: grid;
     justify-items: center;
     gap: 12px;
+  }
+  .coffee {
+    margin-top: 28px;
   }
   .name {
     /* Half the usual pixel-text size. On phones that's half a CSS px per art px, which is

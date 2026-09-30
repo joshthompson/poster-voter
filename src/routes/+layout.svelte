@@ -1,6 +1,7 @@
 <script lang="ts">
   import { PUBLIC_CONVEX_URL } from '$env/static/public';
   import { setupConvex } from 'convex-svelte';
+  import CoffeeButton from '$lib/components/layout/CoffeeButton.svelte';
   import PolkaDots from '$lib/components/layout/PolkaDots.svelte';
   import SetupNotice from '$lib/components/layout/SetupNotice.svelte';
   import SiteHeader from '$lib/components/layout/SiteHeader.svelte';
@@ -26,6 +27,7 @@
     <SetupNotice />
   {/if}
 </main>
+<CoffeeButton />
 
 <style>
   main {

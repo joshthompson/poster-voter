@@ -16,6 +16,7 @@ export const en = {
   yes: 'Yes',
   no: 'No',
   designerQuestion: 'Are you a designer?',
+  coffee: 'Buy Us A Coffee',
 
   header: {
     mute: 'Mute',

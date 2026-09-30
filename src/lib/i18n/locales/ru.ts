@@ -17,6 +17,7 @@ export const ru: Messages = {
   yes: 'Да',
   no: 'Нет',
   designerQuestion: 'Вы дизайнер?',
+  coffee: 'Угостите нас кофе',
 
   header: {
     mute: 'Выключить звук',
