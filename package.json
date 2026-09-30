@@ -25,6 +25,7 @@
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.70.3",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@types/node": "^24.19.0",
     "concurrently": "^10.0.5",
     "dotenv-cli": "^11.0.0",
     "gh-pages": "^6.3.0",

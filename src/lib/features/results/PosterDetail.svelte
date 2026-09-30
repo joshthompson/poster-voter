@@ -11,12 +11,15 @@
     poster,
     segment,
     posterById,
+    shareHref,
     onclose
   }: {
     poster: RankedPoster | null;
     segment: Segment;
     /** The competition's posters, to name the opponents. */
     posterById: Map<PosterInfo['_id'], PosterInfo>;
+    /** The open poster's page, to share. */
+    shareHref?: string;
     onclose: () => void;
   } = $props();
 
@@ -35,7 +38,7 @@
   onclick={(e) => e.target === dialog && dialog.close()}
 >
   {#if poster}
-    <PosterPanel {poster} {segment} {posterById} onclose={() => dialog.close()} />
+    <PosterPanel {poster} {segment} {posterById} {shareHref} onclose={() => dialog.close()} />
   {/if}
 </dialog>
 

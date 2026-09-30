@@ -4,16 +4,18 @@
   import { api } from '$convex/api';
   import Loader from '$lib/components/ui/Loader.svelte';
   import Pill from '$lib/components/ui/Pill.svelte';
+  import ShareButton from '$lib/features/share/ShareButton.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
   import { usePosters } from '$lib/services/posters.svelte';
   import { visibility } from '$lib/state/visibility.svelte';
   import Note from './Note.svelte';
   import PosterPanel from './PosterPanel.svelte';
   import { rank } from './hydrate';
-  import { posterNames } from './links';
+  import { posterHref, posterNames } from './links';
 
   // A poster's own page, named by its competition's slug and its name (see links.ts): the same
-  // detail as the rankings' modal, from everyone's votes, with a way back to the rankings.
+  // detail as the rankings' modal, from everyone's votes, with a way back to the rankings and a
+  // button to share it under its title.
 
   let { competition: slug, name }: { competition: string; name: string } = $props();
 
@@ -53,28 +55,26 @@
 {:else if poster === null}
   <Note>{t.detail.noPoster} <a href={rankings}>{t.detail.seeRankings}</a>.</Note>
 {:else if poster && competition}
-  <nav class="back">
-    <Pill variant="ink" href={rankings}>{t.detail.allRankings}</Pill>
-    <span class="competition legible">{competition.title}{competition.active ? '' : ` · ${t.archived}`}</span>
-  </nav>
+  <p class="competition">
+    <span class="legible">{competition.title}{competition.active ? '' : ` · ${t.archived}`}</span>
+  </p>
   <article class="card">
-    <PosterPanel {poster} segment="all" {posterById} />
+    <PosterPanel {poster} segment="all" {posterById}>
+      {#snippet links()}
+        <Pill variant="ink" href={rankings}>{t.detail.allRankings}</Pill>
+        <ShareButton href={posterHref(slug, name)} title={poster.title} labelled />
+      {/snippet}
+    </PosterPanel>
   </article>
 {:else}
   <div class="loading"><Loader /></div>
 {/if}
 
 <style>
-  .back {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px 16px;
-    max-width: 860px;
-    margin: 0 auto 20px;
-    animation: rise 0.8s var(--smooth) both;
-  }
   .competition {
+    max-width: 860px;
+    margin: 0 auto 12px;
+    animation: rise 0.8s var(--smooth) both;
     font-weight: 700;
     font-size: 13px;
     line-height: 2;

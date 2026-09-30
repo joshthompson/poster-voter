@@ -8,6 +8,7 @@
   import Pill from '$lib/components/ui/Pill.svelte';
   import PixelText from '$lib/components/pixel/PixelText.svelte';
   import DesignerChoice from '$lib/features/designer/DesignerChoice.svelte';
+  import { posterHref, posterNames } from '$lib/features/results/links';
   import { designer } from '$lib/state/designer.svelte';
   import { sound } from '$lib/services/sound.svelte';
   import { location } from '$lib/services/location';
@@ -29,6 +30,9 @@
   const client = useConvexClient();
   const posters = usePosters(() => undefined);
   const list = $derived((posters.data ?? []) as Poster[]);
+  // Each poster's page, to share after voting on it.
+  const names = $derived(posterNames(list));
+  const shareHref = (p: Poster) => (posters.slug ? posterHref(posters.slug, names.get(p._id)!) : undefined);
 
   const session = new VoteSession({
     posters: () => list,
@@ -67,6 +71,8 @@
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') vote(0);
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') vote(1);
     } else if (session.revealed && session.result && (e.key === 'Enter' || e.key === ' ')) {
+      // A focused button, such as share, handles those keys itself.
+      if (e.target instanceof HTMLButtonElement && !e.target.disabled) return;
       e.preventDefault();
       session.advance();
     }
@@ -118,8 +124,10 @@
             rejected={session.chosen !== null && session.chosen !== i}
             {leaving}
             disabled={session.phase !== 'choose'}
-            share={session.result?.pct[i]}
+            pct={session.result?.pct[i]}
             winner={session.result ? session.result.pct[i] >= session.result.pct[1 - i] : false}
+            shareHref={shareHref(poster)}
+            onhold={(held) => session.hold(poster._id, held)}
             onclick={() => vote(i)}
           />
           {#if i === 0}<VsBadge hidden={showingResult} />{/if}

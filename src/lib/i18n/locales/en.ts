@@ -18,6 +18,12 @@ export const en = {
   designerQuestion: 'Are you a designer?',
   coffee: 'Buy Us A Coffee',
 
+  share: {
+    label: 'Share',
+    poster: (title: string) => `Share ${title}`,
+    copied: 'Link copied'
+  },
+
   header: {
     mute: 'Mute',
     unmute: 'Unmute',

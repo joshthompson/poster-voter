@@ -9,29 +9,51 @@ import { requestRun, startRebuild } from './tally';
 export const posterVersion = (c: Doc<'competitions'>) => `${c._id}:${c.postersUpdatedAt ?? 0}`;
 
 /**
- * A competition's current posters (by slug, or the active one), with its id, the ids of posters
- * taken out of it, and the `version` of the list. Pages keep the list and pass its version as
- * `since`: if it's still current, `posters` is null and nothing else is read, so a returning
+ * A competition's current posters (by slug, or the active one), with its id and slug, the ids of
+ * posters taken out of it, and the `version` of the list. Pages keep the list and pass its version
+ * as `since`: if it's still current, `posters` is null and nothing else is read, so a returning
  * visitor is sent a few bytes instead of the list.
  */
 export const list = query({
   args: { competition: v.optional(v.string()), since: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const competition = await find(ctx, args.competition);
-    if (!competition) return { competitionId: null, version: '', posters: [], removed: [] };
+    if (!competition) return { competitionId: null, slug: null, version: '', posters: [], removed: [] };
     const competitionId = competition._id;
+    const slug = competition.slug;
     const version = posterVersion(competition);
-    if (args.since === version) return { competitionId, version, posters: null, removed: null };
+    if (args.since === version) return { competitionId, slug, version, posters: null, removed: null };
     const posters = await ctx.db
       .query('posters')
       .withIndex('by_competition_active', (q) => q.eq('competitionId', competition._id).eq('active', true))
       .collect();
     return {
       competitionId,
+      slug,
       version,
       posters: posters.map(({ _id, title, image }) => ({ _id, title, image })),
       removed: competition.removed ?? []
     };
+  }
+});
+
+/**
+ * Every competition's current posters, in the same order as `list`. The site build reads it to
+ * prerender each poster's page with its own link preview (see src/lib/server/previews.ts).
+ */
+export const all = query({
+  args: {},
+  handler: async (ctx) => {
+    const competitions = await ctx.db.query('competitions').collect();
+    return Promise.all(
+      competitions.map(async (c) => {
+        const posters = await ctx.db
+          .query('posters')
+          .withIndex('by_competition_active', (q) => q.eq('competitionId', c._id).eq('active', true))
+          .collect();
+        return { slug: c.slug, title: c.title, posters: posters.map(({ _id, title, image }) => ({ _id, title, image })) };
+      })
+    );
   }
 });
 

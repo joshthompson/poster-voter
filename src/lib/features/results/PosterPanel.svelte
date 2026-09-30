@@ -1,9 +1,11 @@
 <script lang="ts">
   import { useQuery } from 'convex-svelte';
+  import type { Snippet } from 'svelte';
   import { api } from '$convex/api';
   import IconButton from '$lib/components/ui/IconButton.svelte';
   import Loader from '$lib/components/ui/Loader.svelte';
   import Meter from '$lib/components/ui/Meter.svelte';
+  import ShareButton from '$lib/features/share/ShareButton.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
   import type { Segment } from '$lib/i18n/locales/en';
   import { posterSrc } from '$lib/utils/images';
@@ -14,19 +16,25 @@
 
   // A ranked poster in full: the big image, its numbers, how it does with designers and everyone
   // else, and its record against each poster it has met. The rankings' modal passes `onclose` for
-  // a close button; on the poster's own page there's none, and its title is the page's heading.
+  // a close button and `shareHref` (the poster's page) for a share button in the corner. The
+  // poster's own page has neither: its title is the page's heading, with `links` under it.
 
   let {
     poster,
     segment,
     posterById,
-    onclose
+    shareHref,
+    onclose,
+    links
   }: {
     poster: RankedPoster;
     segment: Segment;
     /** The competition's posters, to name the opponents. */
     posterById: Map<PosterInfo['_id'], PosterInfo>;
+    shareHref?: string;
     onclose?: () => void;
+    /** Shown under the title. */
+    links?: Snippet;
   } = $props();
 
   const SHOWN_OPPONENTS = 8;
@@ -47,11 +55,14 @@
 </script>
 
 <div class="panel">
-  {#if onclose}
-    <div class="close">
-      <IconButton label={t.detail.close} onclick={onclose}>
-        <span class="x" aria-hidden="true">×</span>
-      </IconButton>
+  {#if shareHref || onclose}
+    <div class="actions">
+      {#if shareHref}<ShareButton href={shareHref} title={poster.title} />{/if}
+      {#if onclose}
+        <IconButton label={t.detail.close} onclick={onclose}>
+          <span class="x" aria-hidden="true">×</span>
+        </IconButton>
+      {/if}
     </div>
   {/if}
 
@@ -59,9 +70,16 @@
 
   <div class="info">
     <p class="rank">{t.detail.rank(poster.rank)}</p>
-    <svelte:element this={onclose ? 'h2' : 'h1'} id="poster-detail-title" class="name" class:beside-close={onclose}>
+    <svelte:element
+      this={onclose ? 'h2' : 'h1'}
+      id="poster-detail-title"
+      class="name"
+      class:beside-one={!!shareHref !== !!onclose}
+      class:beside-two={!!(shareHref && onclose)}
+    >
       {poster.title}
     </svelte:element>
+    {#if links}<div class="links">{@render links()}</div>{/if}
 
     <dl class="stats">
       <div>
@@ -140,10 +158,12 @@
     gap: clamp(20px, 3vw, 32px);
     padding: clamp(20px, 3vw, 32px);
   }
-  .close {
+  .actions {
     position: absolute;
     top: 14px;
     right: 14px;
+    display: flex;
+    gap: 8px;
   }
   .x {
     font-size: 26px;
@@ -179,8 +199,18 @@
     letter-spacing: -0.03em;
     line-height: 1.1;
   }
-  .beside-close {
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  /* Clear of the buttons in the corner. */
+  .beside-one {
     margin-right: 48px;
+  }
+  .beside-two {
+    margin-right: 98px;
   }
   h3 {
     margin: 0 0 10px;

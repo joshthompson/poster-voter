@@ -17,6 +17,12 @@ export const sv: Messages = {
   designerQuestion: 'Är du designer?',
   coffee: 'Bjud oss på en kaffe',
 
+  share: {
+    label: 'Dela',
+    poster: (title: string) => `Dela ${title}`,
+    copied: 'Länken kopierad'
+  },
+
   header: {
     mute: 'Stäng av ljud',
     unmute: 'Slå på ljud',

@@ -41,6 +41,8 @@ export class VoteSession {
   #progress = createProgress();
   #shown: Next | null = null;
   #revealTimer: ReturnType<typeof setTimeout> | undefined;
+  /** What's keeping the reveal on screen (see `hold`). */
+  #holds = new Set<string>();
   #showing = false;
 
   constructor(source: Source) {
@@ -89,7 +91,23 @@ export class VoteSession {
       this.error = true;
       console.error(e);
     }
-    this.#revealTimer = setTimeout(() => this.advance(), REVEAL_MS);
+    this.#autoAdvance();
+  }
+
+  /**
+   * Keep the reveal on screen while `by` needs it (e.g. the pointer is over a share button)
+   * instead of moving on by itself. Once nothing holds it, it moves on REVEAL_MS later.
+   */
+  hold(by: string, held: boolean) {
+    if (held) this.#holds.add(by);
+    else this.#holds.delete(by);
+    this.#autoAdvance();
+  }
+
+  /** Move on REVEAL_MS from now, if the reveal is showing and nothing holds it. */
+  #autoAdvance() {
+    clearTimeout(this.#revealTimer);
+    if (this.revealed && !this.#holds.size) this.#revealTimer = setTimeout(() => this.advance(), REVEAL_MS);
   }
 
   skip() {
@@ -133,6 +151,7 @@ export class VoteSession {
     this.#showing = false;
 
     this.#shown = next;
+    this.#holds.clear();
     this.pair = next.pair;
     this.chosen = null;
     this.result = null;

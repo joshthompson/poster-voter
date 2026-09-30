@@ -91,6 +91,7 @@
 
   // The poster open in the modal, looked up in the live list so its numbers keep updating.
   const openPoster = $derived(data?.posters.find((p) => p._id === page.state.poster) ?? null);
+  const openHref = $derived(openPoster && competition ? linkTo(openPoster).href : undefined);
   // Closing it goes back to the rankings' URL; after Back, it's already there.
   const onclose = () => page.state.poster && history.back();
 
@@ -167,7 +168,7 @@
   {/if}
 {/if}
 
-<PosterDetail poster={openPoster} {segment} {posterById} {onclose} />
+<PosterDetail poster={openPoster} {segment} {posterById} shareHref={openHref} {onclose} />
 
 <style>
   .loading {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ShareButton from '$lib/features/share/ShareButton.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
   import { posterSrc } from '$lib/utils/images';
   import ResultSticker from './ResultSticker.svelte';
@@ -6,8 +7,9 @@
   import type { Poster } from './types';
 
   // One poster to vote for. It flies in from the centre, tilts towards the pointer while
-  // voting is open, and after a vote shows its share of the crowd. `side` 0 is left (or top),
-  // 1 is right (or bottom). Sized by --w and spaced by --gap, both set by the stage.
+  // voting is open, and after a vote shows its share of the crowd and a button to share its page.
+  // `side` 0 is left (or top), 1 is right (or bottom). Sized by --w and spaced by --gap, both set
+  // by the stage.
 
   let {
     poster,
@@ -16,8 +18,10 @@
     rejected,
     leaving,
     disabled,
-    share,
+    pct,
     winner,
+    shareHref,
+    onhold,
     onclick
   }: {
     poster: Poster;
@@ -28,40 +32,45 @@
     leaving: boolean;
     disabled: boolean;
     /** This poster's share of the votes, once revealed. */
-    share?: number;
+    pct?: number;
     winner?: boolean;
+    /** Its page, to share once the votes are revealed. */
+    shareHref?: string;
+    /** Whether its share button is in use (see ShareButton). */
+    onhold?: (held: boolean) => void;
     onclick: () => void;
   } = $props();
 </script>
 
-<button
-  class="card side-{side}"
-  class:chosen
-  class:rejected
-  class:leaving
-  {disabled}
-  {onclick}
-  aria-label={i18n.t.vote.voteFor(poster.title)}
->
+<!-- The vote button holds the poster and caption; the share button sits beside it, since
+     buttons can't nest, and both ride the card's flight and bob. -->
+<div class="card side-{side}" class:chosen class:rejected class:leaving>
   <div class="float">
-    <div class="frame">
-      <img src={posterSrc(poster.image)} alt={poster.title} draggable="false" />
-      {#if share !== undefined}
-        <div class="bar"><i style="width: {share}%"></i></div>
-      {/if}
-    </div>
-    {#if share !== undefined}
+    <button class="vote" {disabled} {onclick} aria-label={i18n.t.vote.voteFor(poster.title)}>
+      <div class="frame">
+        <img src={posterSrc(poster.image)} alt={poster.title} draggable="false" />
+        {#if pct !== undefined}
+          <div class="bar"><i style="width: {pct}%"></i></div>
+        {/if}
+      </div>
+      <div class="caption legible">{poster.title}</div>
+    </button>
+    {#if pct !== undefined}
       <ResultSticker
-        pct={share}
+        {pct}
         winner={!!winner}
         label={chosen ? i18n.t.vote.yourPick : i18n.t.vote.ofVoters}
         side={side === 0 ? 'left' : 'right'}
       />
+      {#if shareHref}
+        <!-- Under the title, or in the corner on narrow screens, which hide titles (see below). -->
+        <div class="share below"><ShareButton href={shareHref} title={poster.title} labelled {onhold} /></div>
+        <div class="share corner"><ShareButton href={shareHref} title={poster.title} {onhold} /></div>
+      {/if}
     {/if}
-    <div class="caption legible">{poster.title}</div>
   </div>
   {#if chosen}<Sparks />{/if}
-</button>
+</div>
 
 <style>
   .card {
@@ -71,18 +80,21 @@
     --fy: 0px;
     --out-x: -60vw;
     position: relative;
+    transform: rotate(var(--rot));
+    animation: fly-in 1s var(--spring) both;
+  }
+  .vote {
+    display: block;
     padding: 0;
     border: 0;
     background: none;
     cursor: pointer;
-    transform: rotate(var(--rot));
-    animation: fly-in 1s var(--spring) both;
     -webkit-tap-highlight-color: transparent;
   }
-  .card:disabled {
+  .vote:disabled {
     cursor: default;
   }
-  .card:focus-visible {
+  .vote:focus-visible {
     outline: none;
   }
   .side-1 {
@@ -174,14 +186,14 @@
     background: #f3ebe2;
   }
 
-  .card:not(:disabled):hover .frame,
-  .card:not(:disabled):focus-visible .frame {
+  .vote:not(:disabled):hover .frame,
+  .vote:not(:disabled):focus-visible .frame {
     transform: scale(1.045) rotate(calc(var(--rot) * -1));
     box-shadow:
       0 0 0 5px var(--red),
       0 30px 70px -14px rgba(255, 59, 92, 0.55);
   }
-  .card:not(:disabled):active .frame {
+  .vote:not(:disabled):active .frame {
     transform: scale(0.97);
   }
   .chosen .frame {
@@ -241,7 +253,37 @@
     }
   }
 
-  /* Stacked on tall, narrow screens: fly vertically, and skip the captions. */
+  /* Share pops in just after the sticker. It hangs outside the card's box, so it never moves the posters. */
+  .share {
+    position: absolute;
+    z-index: 2;
+    animation: pop-in 0.5s var(--spring) both 0.35s;
+  }
+  .below {
+    top: 100%;
+    left: 50%;
+    margin-top: 10px;
+    translate: -50% 0;
+  }
+  /* Without a title: the top corner across from the sticker. */
+  .corner {
+    display: none;
+    top: -14px;
+    right: -14px;
+  }
+  .side-1 .corner {
+    right: auto;
+    left: -14px;
+  }
+  /* The poster passed over shrinks to 90% (see .rejected .frame), so follow its corner in. */
+  .rejected .corner {
+    translate: calc(var(--w) * -0.05) calc(var(--w) * 4 / 3 * 0.05);
+  }
+  .side-1.rejected .corner {
+    translate: calc(var(--w) * 0.05) calc(var(--w) * 4 / 3 * 0.05);
+  }
+
+  /* Stacked on tall, narrow screens: fly vertically, and skip the captions (so share moves to the corner). */
   @media (max-aspect-ratio: 4 / 5) {
     .card {
       --fx: 0px;
@@ -252,8 +294,12 @@
       --fy: calc(-50% - var(--gap) / 2);
       --out-x: 80vw;
     }
-    .caption {
+    .caption,
+    .below {
       display: none;
+    }
+    .corner {
+      display: block;
     }
   }
 </style>

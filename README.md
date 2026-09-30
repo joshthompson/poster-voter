@@ -30,6 +30,8 @@ Posters are voted on within a competition. One competition is active at a time. 
 
 Each poster has its own page at `/poster/<slug>/<name>`, where the name comes from its title (`Dungen – Vidrig Vår (Album)` becomes `dungen-vidrig-var-album`), so changing a title changes its link. On the rankings, clicking a poster opens the same detail in a modal and puts that link in the address bar.
 
+Link previews of a poster's page show that poster. Crawlers don't run the app, so the build asks Convex (`posters.all`) for every poster and prerenders a page for each one, and `src/hooks.server.ts` puts the poster's title and image into the preview tags from `app.html` (see `src/lib/server/previews.ts`). A poster synced after the build still opens, through the `404.html` fallback, but its link previews as the site until the next deploy. `pnpm ship` builds before it syncs, so after adding posters, deploy again or push to `main`. If the build can't reach Convex, it warns and carries on without the poster pages.
+
 `posters/` holds the active competition. `posters/competition.json` names it:
 
 ```json

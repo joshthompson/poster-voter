@@ -50,6 +50,10 @@ export function usePosters(competition: () => string | undefined) {
     get competitionId() {
       return query.data?.competitionId;
     },
+    /** The competition's slug, as in its links, once the server has said; null if there isn't one. */
+    get slug() {
+      return query.data?.slug;
+    },
     get error() {
       return query.error;
     },

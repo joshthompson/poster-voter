@@ -19,6 +19,12 @@ export const ru: Messages = {
   designerQuestion: 'Вы дизайнер?',
   coffee: 'Угостите нас кофе',
 
+  share: {
+    label: 'Поделиться',
+    poster: (title: string) => `Поделиться: ${title}`,
+    copied: 'Ссылка скопирована'
+  },
+
   header: {
     mute: 'Выключить звук',
     unmute: 'Включить звук',
