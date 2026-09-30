@@ -89,6 +89,7 @@ export const ru: Messages = {
   about: {
     title: 'О проекте',
     madeBy: 'Авторы',
+    supportUs: 'Поддержите нас',
     people: ['Алиса Васильева', 'Джош Томпсон'],
     elo: {
       title: 'Как устроен рейтинг',

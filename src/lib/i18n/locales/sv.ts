@@ -87,6 +87,7 @@ export const sv: Messages = {
   about: {
     title: 'Om',
     madeBy: 'Gjord av',
+    supportUs: 'Stöd oss',
     people: ['Alisa Vasileva', 'Josh Thompson'],
     elo: {
       title: 'Så funkar topplistan',

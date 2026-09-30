@@ -55,7 +55,8 @@
           </div>
         {/each}
       </div>
-      <div class="coffee"><CoffeeButton full /></div>
+      <p class="label support">{t.supportUs}</p>
+      <CoffeeButton full />
     </Card>
     <Card delay={0.3}>
       <h2>{t.elo.title}</h2>
@@ -143,7 +144,7 @@
     justify-items: center;
     gap: 12px;
   }
-  .coffee {
+  .support {
     margin-top: 28px;
   }
   .name {

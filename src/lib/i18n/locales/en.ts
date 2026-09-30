@@ -89,6 +89,7 @@ export const en = {
   about: {
     title: 'About',
     madeBy: 'Made by',
+    supportUs: 'Support Us',
     // Non-breaking spaces keep each name on one line.
     people: ['Alisa Vasileva', 'Josh Thompson'],
     elo: {
