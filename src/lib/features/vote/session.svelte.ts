@@ -1,6 +1,6 @@
 import { posterSrc, preload } from '$lib/utils/images';
-import { nextPair, pairKey } from './pairing';
-import { createSeen } from './seen';
+import { pairOrder } from './pairing';
+import { createProgress } from './progress';
 import type { Phase, Poster, VoteResult } from './types';
 
 // One visitor's run through the pairs: which pair is up, and the enter → choose → reveal → exit
@@ -13,11 +13,14 @@ const EXIT_MS = 700;
 type Source = {
   /** The competition's posters (reactive). */
   posters: () => Poster[];
-  /** Pairs this voter has already voted on, as pair keys (reactive). */
-  votedKeys: () => Set<string>;
+  /** The collection (competition) they belong to (reactive): undefined until known, null if none. */
+  collection: () => string | null | undefined;
   /** Record a vote; resolves to both posters' vote counts on this pair. */
   cast: (winner: Poster, loser: Poster) => Promise<{ winnerVotes: number; loserVotes: number }>;
 };
+
+/** A pair to show, and where it is in the visitor's order for its collection. */
+type Next = { pair: Poster[]; collection: string; at: number };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -33,10 +36,8 @@ export class VoteSession {
   streak = $state(0);
 
   #source: Source;
-  #seen = createSeen();
-  #justVoted = new Set<string>(); // votes this visit; `votedKeys` is fetched once, before them
-  #shownPairs = new Set<string>();
-  #upcoming: Poster[] | null = null;
+  #progress = createProgress();
+  #shown: Next | null = null;
   #revealTimer: ReturnType<typeof setTimeout> | undefined;
   #showing = false;
 
@@ -53,7 +54,7 @@ export class VoteSession {
     return this.phase === 'reveal' && (!!this.result || this.error);
   }
 
-  /** Every pair of the current posters, for the "you've voted on them all" message. */
+  /** Every pair of the current posters, for the "you've been through them all" message. */
   get totalPairs() {
     const n = this.#source.posters().length;
     return (n * (n - 1)) / 2;
@@ -61,11 +62,10 @@ export class VoteSession {
 
   /** Show the first pair once there are posters; also picks up again from `done` when new ones arrive. */
   refresh() {
-    const list = this.#source.posters();
-    if (this.pair || this.#showing || list.length < 2) return;
-    if (this.phase === 'loading') this.#show(this.#pick(list));
+    if (this.pair || this.#showing || this.#source.posters().length < 2 || !this.#source.collection()) return;
+    if (this.phase === 'loading') this.#show(this.#next());
     else if (this.phase === 'done') {
-      const next = this.#pick(list);
+      const next = this.#next();
       if (next) this.#show(next);
     }
   }
@@ -79,7 +79,6 @@ export class VoteSession {
 
     try {
       const r = await this.#source.cast(winner, loser);
-      this.#justVoted.add(pairKey(pair));
       const total = r.winnerVotes + r.loserVotes;
       const w = Math.round((r.winnerVotes / total) * 100);
       this.result = { pct: i === 0 ? [w, 100 - w] : [100 - w, w], total };
@@ -98,52 +97,46 @@ export class VoteSession {
   async advance() {
     clearTimeout(this.#revealTimer);
     this.phase = 'exit';
+    // Voted or skipped, this pair is done with: carry on after it, this visit or the next.
+    if (this.#shown) this.#progress.set(this.#shown.collection, this.#shown.at + 1);
     await wait(EXIT_MS);
-    // The upcoming pair was chosen before this vote; re-pick if posters changed or it's now voted.
-    const list = this.#source.posters();
-    const ids = new Set(list.map((p) => p._id));
-    const up = this.#upcoming;
-    const stillGood = up && up.every((p) => ids.has(p._id)) && !this.#hasVoted(pairKey(up));
-    await this.#show(stillGood ? up : this.#pick(list, this.pair ? pairKey(this.pair) : undefined));
+    await this.#show(this.#next());
   }
 
-  #hasVoted(key: string) {
-    return this.#justVoted.has(key) || this.#source.votedKeys().has(key);
+  /**
+   * The pair at `at` in this visitor's order (default: where they're up to), or null once they've
+   * been through them all. Changing the posters reshuffles the order, but they carry on from the
+   * same place in it.
+   */
+  #next(at?: number): Next | null {
+    const collection = this.#source.collection();
+    if (!collection) return null;
+    const { seed, index } = this.#progress.get(collection);
+    at ??= index;
+    const pair = pairOrder(this.#source.posters(), seed)[at];
+    return pair ? { pair, collection, at } : null;
   }
 
-  /** The next pair to show, or null once every pair has been voted on. `avoid` is the pair on screen. */
-  #pick(from: Poster[], avoid?: string) {
-    const votedPosters = new Set([...this.#source.votedKeys()].flatMap((k) => k.split('|')));
-    return nextPair(from, {
-      hasSeen: (id) => this.#seen.has(id) || votedPosters.has(id),
-      hasVoted: (key) => this.#hasVoted(key),
-      wasShown: (key) => this.#shownPairs.has(key),
-      avoid
-    });
-  }
-
-  async #show(next: Poster[] | null) {
+  async #show(next: Next | null) {
     if (!next) {
       this.pair = null;
       this.phase = 'done';
       return;
     }
     this.#showing = true;
-    await Promise.all(next.map((p) => preload(posterSrc(p.image))));
-    this.#seen.add(next.map((p) => p._id));
-    this.#shownPairs.add(pairKey(next));
+    await Promise.all(next.pair.map((p) => preload(posterSrc(p.image))));
     this.#showing = false;
 
-    this.pair = next;
+    this.#shown = next;
+    this.pair = next.pair;
     this.chosen = null;
     this.result = null;
     this.error = false;
     this.round++;
     this.phase = 'enter';
 
-    // Queue up (and preload) the following pair while this one is on screen.
-    this.#upcoming = this.#pick(this.#source.posters(), pairKey(next));
-    this.#upcoming?.forEach((p) => preload(posterSrc(p.image)));
+    // Preload the following pair while this one is on screen.
+    this.#next(next.at + 1)?.pair.forEach((p) => preload(posterSrc(p.image)));
 
     await wait(ENTER_MS);
     if (this.phase === 'enter') this.phase = 'choose';

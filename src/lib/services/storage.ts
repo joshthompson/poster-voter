@@ -34,7 +34,15 @@ export const storage = {
     this.set(key, JSON.stringify(value));
   },
 
-  /** Forget everything the site keeps (voter id, designer answer, seen posters, sound, language). */
+  remove(key: string) {
+    try {
+      localStorage.removeItem(PREFIX + key);
+    } catch {
+      // Nothing stored; fine.
+    }
+  },
+
+  /** Forget everything the site keeps (voter id, designer answer, voting progress, sound, language). */
   clear() {
     try {
       Object.keys(localStorage)

@@ -38,6 +38,10 @@ export function usePosters(competition: () => string | undefined) {
       if (result.posters) return result.posters;
       return cached?.version === result.version ? cached.posters : undefined;
     },
+    /** The competition's id, once the server has said; null if there isn't one. */
+    get competitionId() {
+      return query.data?.competitionId;
+    },
     get error() {
       return query.error;
     },

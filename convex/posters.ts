@@ -9,22 +9,23 @@ import { requestRun, startRebuild } from './tally';
 export const posterVersion = (c: Doc<'competitions'>) => `${c._id}:${c.postersUpdatedAt ?? 0}`;
 
 /**
- * A competition's current posters (by slug, or the active one), with the `version` of the list.
- * Pages keep the list and pass its version as `since`: if it's still current, `posters` is null
- * and nothing else is read, so a returning visitor is sent a few bytes instead of the list.
+ * A competition's current posters (by slug, or the active one), with its id and the `version` of
+ * the list. Pages keep the list and pass its version as `since`: if it's still current, `posters`
+ * is null and nothing else is read, so a returning visitor is sent a few bytes instead of the list.
  */
 export const list = query({
   args: { competition: v.optional(v.string()), since: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const competition = await find(ctx, args.competition);
-    if (!competition) return { version: '', posters: [] };
+    if (!competition) return { competitionId: null, version: '', posters: [] };
+    const competitionId = competition._id;
     const version = posterVersion(competition);
-    if (args.since === version) return { version, posters: null };
+    if (args.since === version) return { competitionId, version, posters: null };
     const posters = await ctx.db
       .query('posters')
       .withIndex('by_competition_active', (q) => q.eq('competitionId', competition._id).eq('active', true))
       .collect();
-    return { version, posters: posters.map(({ _id, title, image }) => ({ _id, title, image })) };
+    return { competitionId, version, posters: posters.map(({ _id, title, image }) => ({ _id, title, image })) };
   }
 });
 

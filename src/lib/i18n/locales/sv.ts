@@ -43,7 +43,7 @@ export const sv: Messages = {
     start: 'Börja rösta',
     doneTitle: 'Det var alla par!',
     doneBody: (pairs: number) =>
-      `Du har röstat på alla ${num(pairs)} par av de nuvarande affischerna. Kom tillbaka när nya dyker upp.`,
+      `Du har gått igenom alla ${num(pairs)} par av de nuvarande affischerna. Kom tillbaka när nya dyker upp.`,
     seeRankings: 'Se topplistan →',
     votesOnPair: (n: number) => `${num(n)} ${plural(n, 'röst', 'röster')} på det här paret`,
     voteFor: (title: string) => `Rösta på ${title}`,
@@ -71,7 +71,7 @@ export const sv: Messages = {
     counting: 'Räknar…',
     votedBefore: 'Du har röstat',
     votedAfter: (n: number) => `${plural(n, 'gång', 'gånger')}.`,
-    clearHint: 'Att rensa glömmer ditt designersvar, affischerna du har sett och dina ljud- och språkinställningar.',
+    clearHint: 'Att rensa glömmer ditt designersvar, hur långt du har kommit bland paren och dina ljud- och språkinställningar.',
     clear: 'Rensa data',
     clearConfirm:
       'Rensa allt Poster Vote minns på den här enheten? Du börjar om som en ny röstare. Röster du redan har lagt finns kvar i topplistan.'

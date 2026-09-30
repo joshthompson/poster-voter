@@ -1,47 +1,61 @@
-// Which pair of posters to show next.
+// The order a visitor sees the pairs in. It's fixed by a seed, so only the seed and how far
+// they've got need remembering (see progress.ts).
 //
-// 1. Until you've seen every poster, pair up ones you haven't seen (80 posters → 40 pairs).
-// 2. Then only pairs you haven't voted on, favouring ones not shown yet this visit.
-// 3. Once every pair has your vote, there's nothing left: returns null.
+// It's a round-robin: the posters are shuffled, then split into rounds in which each poster
+// appears once (the circle method), so every round shows every poster before any comes back.
+// 80 posters make 79 rounds of 40 pairs, and between them every pair comes up exactly once.
+// The rounds, and the pairs within each, are shuffled too. With an odd number, one poster sits
+// out each round, and its pair comes first in the next so it isn't left waiting.
 
 type Item = { _id: string };
 
-export type PairState = {
-  hasSeen: (id: string) => boolean;
-  hasVoted: (key: string) => boolean;
-  wasShown: (key: string) => boolean;
-  /** The pair on screen, so it isn't picked again straight away unless it's the only one left. */
-  avoid?: string;
-};
+/** Random numbers from 0 to 1 (mulberry32): the same seed always gives the same ones. */
+function seeded(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), s | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32;
+  };
+}
 
-const random = <T>(items: T[]) => items[Math.floor(Math.random() * items.length)];
-
-/** Order-independent key for a pair, matching the server's "smallerId|largerId". */
-export const pairKey = ([a, b]: Item[]) => (a._id < b._id ? `${a._id}|${b._id}` : `${b._id}|${a._id}`);
-
-export function nextPair<T extends Item>(from: T[], s: PairState): T[] | null {
-  const unseen = from.filter((p) => !s.hasSeen(p._id));
-  if (unseen.length >= 2) {
-    const a = random(unseen);
-    return [a, random(unseen.filter((p) => p !== a))];
+function shuffle<T>(items: T[], random: () => number) {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
   }
+  return items;
+}
 
-  let open: T[][] = [];
-  for (let i = 0; i < from.length; i++) {
-    for (let j = i + 1; j < from.length; j++) {
-      if (!s.hasVoted(pairKey([from[i], from[j]]))) open.push([from[i], from[j]]);
+/** Every pair of `from` once, in the order `seed` gives, each with its sides picked at random. */
+export function pairOrder<T extends Item>(from: T[], seed: number): T[][] {
+  const random = seeded(seed);
+  // Sorted first so the order depends only on which posters there are, not the order they came in.
+  const posters: (T | null)[] = shuffle(
+    [...from].sort((a, b) => (a._id < b._id ? -1 : 1)),
+    random
+  );
+  if (posters.length % 2) posters.push(null);
+  const n = posters.length;
+  if (n < 2) return [];
+
+  // The last poster stays put while the others rotate a place each round, meeting a new one each time.
+  const rounds = Array.from({ length: n - 1 }, (_, r) => {
+    const pairs: T[][] = [];
+    for (let i = 0; i < n / 2; i++) {
+      const a = i ? posters[(r + i) % (n - 1)] : posters[n - 1];
+      const b = posters[(r - i + n - 1) % (n - 1)];
+      if (a && b) pairs.push(random() < 0.5 ? [a, b] : [b, a]);
     }
-  }
-  const others = open.filter((p) => pairKey(p) !== s.avoid);
-  if (others.length) open = others;
-  if (!open.length) return null;
+    return { pairs: shuffle(pairs, random), out: posters[n - 1] ? null : posters[r] };
+  });
 
-  // An odd poster out still gets its first showing next; then fresh pairs before skipped ones.
-  const pool = [
-    unseen.length ? open.filter((p) => p.includes(unseen[0])) : [],
-    open.filter((p) => !s.wasShown(pairKey(p))),
-    open
-  ].find((p) => p.length)!;
-  const next = random(pool);
-  return Math.random() < 0.5 ? next : [next[1], next[0]];
+  shuffle(rounds, random).forEach((round, k) => {
+    const waiting = rounds[k - 1]?.out;
+    if (!waiting) return;
+    const at = round.pairs.findIndex((p) => p.includes(waiting));
+    round.pairs.unshift(...round.pairs.splice(at, 1));
+  });
+  return rounds.flatMap((round) => round.pairs);
 }

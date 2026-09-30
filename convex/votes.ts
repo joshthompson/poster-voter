@@ -5,21 +5,6 @@ import { getActive } from './competitions';
 import { orderPair } from './shared';
 import { getProgress, requestRun, startRebuild } from './tally';
 
-/**
- * Every pair this voter has voted on, as "smallerId|largerId" keys. The voting page fetches it
- * once per visit and tracks new votes itself, so it isn't re-sent after every vote.
- */
-export const mine = query({
-  args: { voterId: v.string() },
-  handler: async (ctx, { voterId }) => {
-    const votes = await ctx.db
-      .query('votes')
-      .withIndex('by_voter', (q) => q.eq('voterId', voterId.slice(0, 64)))
-      .collect();
-    return [...new Set(votes.map((v) => orderPair(v.winnerId, v.loserId).join('|')))];
-  }
-});
-
 /** How many votes this voter has cast. */
 export const count = query({
   args: { voterId: v.string() },

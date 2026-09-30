@@ -16,6 +16,10 @@
     x: number;
     y: number;
     size: number;
+    // Jitter and scale are fractions of the grid spacing, so a dot keeps its look when the spacing changes.
+    jx: number;
+    jy: number;
+    scale: number;
     sprite: Sprite;
     peak: number;
     period: number;
@@ -24,6 +28,7 @@
     cycle: number;
   };
 
+  let field: HTMLDivElement;
   let canvas: HTMLCanvasElement;
 
   function loadImage(src: string) {
@@ -67,9 +72,13 @@
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     let sprites: Sprite[] = [];
     let dots: Dot[] = [];
+    // Every dot ever placed, keyed by grid cell, so resizing reuses dots instead of re-rolling them.
+    const cells = new Map<string, Dot>();
     let px = 3; // CSS pixels per art pixel
     let cw = 0;
     let ch = 0;
+    let fw = 0;
+    let fh = 0;
     let frame = 0;
     let disposed = false;
     const pointer = { x: -9999, y: -9999, tx: -9999, ty: -9999 };
@@ -77,9 +86,31 @@
     const rand = (min: number, max: number) => min + Math.random() * (max - min);
     const randomSprite = () => sprites[Math.floor(Math.random() * sprites.length)];
 
+    function makeDot(): Dot {
+      const big = Math.random() < 0.07;
+      return {
+        x: 0,
+        y: 0,
+        size: 0,
+        jx: rand(-0.12, 0.12),
+        jy: rand(-0.12, 0.12),
+        scale: big ? rand(0.95, 1.15) : rand(0.3, 0.72),
+        sprite: randomSprite(),
+        peak: rand(0.4, 0.72),
+        period: rand(4, 11),
+        offset: Math.random(),
+        on: rand(0.55, 0.85),
+        cycle: -1
+      };
+    }
+
+    /** Fits the canvas and dots to the field. Returns false if its size hasn't changed. */
     function build() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const w = field.clientWidth;
+      const h = field.clientHeight;
+      if (w === fw && h === fh) return false;
+      fw = w;
+      fh = h;
       px = Math.max(2, Math.round(Math.min(w, h) / 300));
       cw = Math.ceil(w / px);
       ch = Math.ceil(h / px);
@@ -94,21 +125,17 @@
       dots = [];
       for (let row = -1, y = 0; y < ch + spacing; row++, y = row * spacing * 0.866) {
         const offset = row % 2 ? spacing / 2 : 0;
-        for (let x = -offset; x < cw + spacing; x += spacing) {
-          const big = Math.random() < 0.07;
-          dots.push({
-            x: x + rand(-0.12, 0.12) * spacing,
-            y: y + rand(-0.12, 0.12) * spacing,
-            size: spacing * (big ? rand(0.95, 1.15) : rand(0.3, 0.72)),
-            sprite: randomSprite(),
-            peak: rand(0.4, 0.72),
-            period: rand(4, 11),
-            offset: Math.random(),
-            on: rand(0.55, 0.85),
-            cycle: -1
-          });
+        for (let col = 0, x = -offset; x < cw + spacing; col++, x += spacing) {
+          const key = `${row},${col}`;
+          let dot = cells.get(key);
+          if (!dot) cells.set(key, (dot = makeDot()));
+          dot.x = x + dot.jx * spacing;
+          dot.y = y + dot.jy * spacing;
+          dot.size = dot.scale * spacing;
+          dots.push(dot);
         }
       }
+      return true;
     }
 
     function draw(time: number) {
@@ -150,10 +177,14 @@
       if (!reduceMotion) frame = requestAnimationFrame(draw);
     }
 
-    const onResize = () => {
-      build();
-      if (reduceMotion) draw(0);
-    };
+    // Watches the field rather than the window: it's sized to the large viewport, so mobile toolbars
+    // sliding in and out while scrolling never change it. This runs after the frame's draw, and
+    // resizing the canvas clears it, so draw again straight away.
+    const resizeObserver = new ResizeObserver(() => {
+      if (!build()) return;
+      cancelAnimationFrame(frame);
+      draw(performance.now());
+    });
     const onMove = (e: PointerEvent) => {
       pointer.tx = e.clientX;
       pointer.ty = e.clientY;
@@ -169,7 +200,7 @@
       );
       build();
       frame = requestAnimationFrame(draw);
-      window.addEventListener('resize', onResize);
+      resizeObserver.observe(field);
       window.addEventListener('pointermove', onMove);
       document.addEventListener('pointerleave', onLeave);
     });
@@ -177,21 +208,26 @@
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);
-      window.removeEventListener('resize', onResize);
+      resizeObserver.disconnect();
       window.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerleave', onLeave);
     };
   });
 </script>
 
-<div class="field" aria-hidden="true">
+<div class="field" aria-hidden="true" bind:this={field}>
   <canvas bind:this={canvas}></canvas>
 </div>
 
 <style>
   .field {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* The largest viewport (toolbars hidden), so it keeps one size while mobile toolbars come and go. */
+    height: 100vh;
+    height: 100lvh;
     z-index: 0;
     overflow: hidden;
     pointer-events: none;

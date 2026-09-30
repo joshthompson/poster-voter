@@ -28,22 +28,11 @@
   location(); // start the lookup now so it's ready by the first vote
   const client = useConvexClient();
   const posters = usePosters(() => undefined);
-  // The pairs you've voted on, fetched once: the session remembers the ones you vote on from here.
-  let myVotes = $state<{ keys: string[] | null; failed: boolean }>({ keys: null, failed: false });
-  client.query(api.votes.mine, { voterId: me }).then(
-    (keys) => (myVotes = { keys, failed: false }),
-    (e) => {
-      console.error(e);
-      myVotes = { keys: [], failed: true };
-    }
-  );
-
   const list = $derived((posters.data ?? []) as Poster[]);
-  const votedKeys = $derived(new Set(myVotes.keys ?? []));
 
   const session = new VoteSession({
     posters: () => list,
-    votedKeys: () => votedKeys,
+    collection: () => posters.competitionId,
     cast: async (winner, loser) =>
       client.mutation(api.votes.cast, {
         winnerId: winner._id,
@@ -58,7 +47,7 @@
   let started = $state(sound.unlocked);
 
   $effect(() => {
-    if (started && myVotes.keys) session.refresh();
+    if (started) session.refresh();
   });
 
   function start() {

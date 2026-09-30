@@ -44,7 +44,7 @@ export const en = {
     start: 'Start voting',
     doneTitle: 'That’s every pair!',
     doneBody: (pairs: number) =>
-      `You’ve voted on all ${num(pairs)} pairs of the current posters. Come back when new ones go up.`,
+      `You’ve been through all ${num(pairs)} pairs of the current posters. Come back when new ones go up.`,
     seeRankings: 'See the rankings →',
     votesOnPair: (n: number) => `${num(n)} vote${s(n)} on this pair`,
     voteFor: (title: string) => `Vote for ${title}`,
@@ -73,7 +73,7 @@ export const en = {
     // "You have voted <strong>n</strong> times."
     votedBefore: 'You have voted',
     votedAfter: (n: number): string => (n === 1 ? 'time.' : 'times.'),
-    clearHint: 'Clearing storage forgets your designer answer, the posters you’ve seen, and your sound and language settings.',
+    clearHint: 'Clearing storage forgets your designer answer, how far you’ve got through the pairs, and your sound and language settings.',
     clear: 'Clear storage',
     clearConfirm:
       'Clear everything Poster Vote remembers on this device? You’ll start again as a new voter. Votes you’ve already cast stay in the rankings.'
