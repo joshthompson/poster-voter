@@ -86,7 +86,7 @@
       { label: t.stats.votes, value: s.totalVotes },
       { label: t.stats.voters, value: s.voters },
       { label: t.stats.posters, value: s.posterCount },
-      { label: t.stats.today, value: s.lastDay },
+      { label: t.stats.today, value: s.today },
       { label: t.stats.explored, value: coverage, decimals: coverage < 10 ? 1 : 0, suffix: '%' }
     ];
   });

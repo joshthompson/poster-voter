@@ -1,31 +1,23 @@
-// Hand-drawn pixel letters from $lib/assets/chars/<set>/ (latin, cyrillic, numbers, punctuation),
-// keyed by character ("a", "ж", "7", "!", …). Drop another PNG named after its character into
-// any set folder and it's picked up automatically.
-// Characters that break URLs or filenames (%, ?, #, …) use a name from NAMED instead.
+// The hand-drawn pixel letters are the Pixel Letters font (lib/assets/fonts, declared in
+// lib/styles/fonts.css), which `pnpm font` builds from the drawings in lib/assets/chars.
+// One em is 32 art px: a line of text, with every letter standing on its bottom edge.
+// These are the letters' sizes, for layout that has to know them before the text is drawn.
 
-const NAMED: Record<string, string> = {
-  percent: '%',
-  question: '?',
-  exclamation: '!',
-  hash: '#',
-  dot: '.',
-  period: '.',
-  comma: ',',
-  slash: '/'
-};
+import data from '$lib/assets/fonts/pixel-letters.json';
 
-const files = import.meta.glob('../../assets/chars/**/*.png', {
-  eager: true,
-  query: '?url',
-  import: 'default'
-}) as Record<string, string>;
+type Metrics = { advance: number; height: number };
+const metrics: Record<string, Metrics> = data;
 
-// macOS can store filenames decomposed (й as и + combining breve), so compare in NFC.
-export const glyphs: Record<string, string> = Object.fromEntries(
-  Object.entries(files).map(([path, url]) => {
-    const name = path.split('/').pop()!.replace('.png', '').normalize('NFC');
-    return [NAMED[name] ?? name, url];
-  })
-);
+const EM = 32;
 
-export const glyphFor = (char: string): string | undefined => glyphs[char.normalize('NFC').toLowerCase()];
+// A guess for characters the font lacks, which show in the site font instead.
+const FALLBACK: Metrics = { advance: 18, height: 28 };
+const metricsOf = (char: string) => metrics[char.normalize('NFC')] ?? FALLBACK;
+
+// Width of the widest word in art px. Each letter's advance includes the art pixel after it,
+// which the last letter doesn't need.
+export const widestWord = (text: string): number =>
+  Math.max(...text.split(' ').map((word) => [...word].reduce((w, char) => w + metricsOf(char).advance, 0) - 1));
+
+// Art px between the top of the line and the top of the text's tallest letter.
+export const headroom = (text: string): number => EM - Math.max(0, ...[...text].map((char) => metricsOf(char).height));

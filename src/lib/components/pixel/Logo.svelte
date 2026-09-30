@@ -1,26 +1,20 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { glyphFor } from './glyphs';
+  import { headroom } from './glyphs';
 
   // Text (default "POSTER VOTE!") spelled out in the hand-drawn pixel letters (see ./glyphs).
   // Each letter drifts gently on its own path. Positions are snapped to whole device pixels
-  // every frame so the pixel art is never resampled (no blur, no shimmer).
+  // every frame so the letters' edges stay on the pixel grid (no blur, no shimmer).
   // `px` fixes the screen pixels per art pixel; omit it to use the responsive default.
 
   let { text = 'POSTER VOTE!', px }: { text?: string; px?: number } = $props();
 
   // The text is fixed for the component's lifetime, so only its initial value is needed.
-  const letters = $state(
-    // svelte-ignore state_referenced_locally
-    text.split('').map((char) => ({
-      char,
-      src: glyphFor(char),
-      size: { w: 0, h: 0 }
-    }))
-  );
+  // svelte-ignore state_referenced_locally
+  const letters = text.split('');
 
   let logo: HTMLElement;
-  const imgs: HTMLImageElement[] = [];
+  const els: HTMLElement[] = [];
 
   onMount(() => {
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -37,10 +31,10 @@
     function measure() {
       const artPx = parseFloat(getComputedStyle(logo).getPropertyValue('--px')) || 1;
       amplitude = artPx * 1.1;
-      bases = imgs.map((img) => {
-        if (!img) return { x: 0, y: 0 };
-        img.style.translate = '0px 0px';
-        const r = img.getBoundingClientRect();
+      bases = els.map((el) => {
+        if (!el) return { x: 0, y: 0 };
+        el.style.translate = '0px 0px';
+        const r = el.getBoundingClientRect();
         return { x: r.left, y: r.top };
       });
     }
@@ -49,19 +43,19 @@
       const t = time / 1000;
       const dpr = window.devicePixelRatio || 1;
       const snap = (n: number) => Math.round(n * dpr) / dpr;
-      imgs.forEach((img, i) => {
-        if (!img || !bases[i]) return;
+      els.forEach((el, i) => {
+        if (!el || !bases[i]) return;
         const p = paths[i];
         const b = bases[i];
         const drift = reduceMotion ? 0 : amplitude;
         const x = snap(b.x + Math.sin(t * p.fx + p.px) * drift) - b.x;
         const y = snap(b.y + Math.sin(t * p.fy + p.py) * drift) - b.y;
-        img.style.translate = `${x}px ${y}px`;
+        el.style.translate = `${x}px ${y}px`;
       });
       if (!reduceMotion) frame = requestAnimationFrame(tick);
     }
 
-    // Re-measure whenever layout could shift the letters (resize, images loading).
+    // Re-measure whenever layout could shift the letters (resize, the font loading).
     const observer = new ResizeObserver(() => {
       measure();
       if (reduceMotion) tick(0);
@@ -79,21 +73,18 @@
   });
 </script>
 
-<span class="logo" bind:this={logo} role="img" aria-label={text} style={px ? `--px: ${px}` : undefined}>
-  {#each letters as l, i}
-    {#if l.src}
-      <img
-        bind:this={imgs[i]}
-        src={l.src}
-        alt={l.char}
-        aria-hidden="true"
-        draggable="false"
-        bind:naturalWidth={l.size.w}
-        bind:naturalHeight={l.size.h}
-        style="--nw:{l.size.w}; --nh:{l.size.h}"
-      />
-    {:else}
+<span
+  class="logo"
+  bind:this={logo}
+  role="img"
+  aria-label={text}
+  style="--headroom: {headroom(text)}{px ? `; --px: ${px}` : ''}"
+>
+  {#each letters as char, i}
+    {#if char === ' '}
       <span class="space"></span>
+    {:else}
+      <span class="letter" bind:this={els[i]} aria-hidden="true">{char}</span>
     {/if}
   {/each}
 </span>
@@ -104,8 +95,15 @@
     --px: 2;
     display: inline-flex;
     align-items: flex-end;
-    gap: calc(var(--px) * 1px);
-    line-height: 0;
+    /* One em is 32 art px; the box is trimmed to the tallest letter, as in PixelText. */
+    font: 800 calc(var(--px) * 32px) / 1 var(--font-pixel);
+    margin-top: calc(var(--px) * var(--headroom) * -1px);
+    color: black;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+    /* Each letter's advance includes the art pixel after it; the last one's isn't needed. */
+    margin-inline-end: calc(var(--px) * -1px);
   }
   @media (max-width: 560px) {
     .logo {
@@ -113,16 +111,12 @@
     }
   }
 
+  /* With the art pixel after the letter before it, words are 10 art px apart. */
   .space {
-    width: calc(var(--px) * 8px);
+    width: calc(var(--px) * 9px);
   }
 
-  img {
+  .letter {
     display: block;
-    width: calc(var(--nw) * var(--px) * 1px);
-    height: calc(var(--nh) * var(--px) * 1px);
-    image-rendering: crisp-edges;
-    image-rendering: pixelated;
-    user-select: none;
   }
 </style>

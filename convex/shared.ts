@@ -14,6 +14,9 @@ export const K = 32;
 /** A city needs this many votes before it gets a local favourite. */
 export const LOCAL_MIN_VOTES = 5;
 
+/** Votes are counted per hour: ms since epoch / HOUR_MS. */
+export const HOUR_MS = 3_600_000;
+
 /** The two posters in id order, so a pair has one key whichever way round it was voted. */
 export function orderPair(x: Id<'posters'>, y: Id<'posters'>) {
   return x < y ? ([x, y] as const) : ([y, x] as const);

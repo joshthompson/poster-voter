@@ -29,6 +29,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Rebuilds the pixel font from src/lib/assets/chars, so drawings committed without running
+      # `pnpm font` still make it into the deploy.
+      - run: pnpm font
+
       # Deploys Convex functions to production, then builds the site with
       # PUBLIC_CONVEX_URL pointing at that deployment. Runs `vite build` rather
       # than `pnpm build`: the original posters are gitignored, so CI uses the

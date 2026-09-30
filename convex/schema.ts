@@ -191,7 +191,7 @@ export default defineSchema({
     .index('by_city_wins', ['competitionId', 'segment', 'country', 'city', 'wins'])
     .index('by_poster_wins', ['posterId', 'segment', 'wins']),
 
-  // Votes per competition and hour (ms since epoch / 3,600,000), for "votes today".
+  // Votes per competition and hour (ms since epoch / HOUR_MS), for "votes today".
   hours: defineTable({
     competitionId: v.id('competitions'),
     hour: v.number(),
@@ -210,7 +210,12 @@ export default defineSchema({
     votes: v.number(),
     voters: v.number(),
     pairsSeen: v.number(),
-    lastDay: v.number(),
+    // Votes per hour (see `hours`) over the last 25 hours, so the page can count the votes since
+    // midnight where the viewer is. Missing on snapshots built before it was kept.
+    recent: v.optional(v.array(v.object({ hour: v.number(), votes: v.number() }))),
+    // Legacy: votes in the 24 hours before `builtAt`, replaced by `recent`. Dropped as each
+    // snapshot is rebuilt; remove once they all have been.
+    lastDay: v.optional(v.number()),
     // Posters with at least one match. Rating rounded; posters missing here are unrated.
     scores: v.array(v.object({ id: v.id('posters'), rating: v.number(), wins: v.number(), losses: v.number() })),
     closest: duel,

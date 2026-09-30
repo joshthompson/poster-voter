@@ -132,7 +132,7 @@ export const ru: Messages = {
       votes: 'Голосов',
       voters: 'Участников',
       posters: 'Постеров',
-      today: 'Голосов за сутки',
+      today: 'Голосов сегодня',
       explored: 'Изучено пар'
     },
     noVotesArchived: (segment: Segment) => `Голосов${among(segment)} не было.`,

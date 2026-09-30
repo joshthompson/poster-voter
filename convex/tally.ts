@@ -4,7 +4,7 @@ import { v } from 'convex/values';
 import type { Doc, Id, TableNames } from './_generated/dataModel';
 import type { WithOptionalSystemFields, WithoutSystemFields } from 'convex/server';
 import { getActive } from './competitions';
-import { K, LOCAL_MIN_VOTES, SEGMENTS, START_RATING, groupOf, orderPair, type Segment } from './shared';
+import { HOUR_MS, K, LOCAL_MIN_VOTES, SEGMENTS, START_RATING, groupOf, orderPair, type Segment } from './shared';
 
 // The tally: everything the rankings show, worked out from the votes in the background.
 //
@@ -29,7 +29,6 @@ const BATCH = 400;
 // Documents deleted per run while clearing for a rebuild.
 const CLEAR_BATCH = 1000;
 const LOCAL_PICKS = 12;
-const HOUR_MS = 3_600_000;
 
 type Score = { rating: number; wins: number; losses: number };
 type Counts = Doc<'progress'>['counts'];
@@ -404,16 +403,21 @@ class Tally {
     if (this.recheck.size) await this.cities.save();
   }
 
-  /** Votes in the last 24 hours, per segment. */
-  async lastDay(now: number) {
+  /**
+   * Votes per hour, per segment, from the hour 24 hours back to now: enough to cover the viewer's
+   * midnight wherever they are, and for as long as the snapshot stays current.
+   */
+  async recent(now: number) {
     const nowHour = Math.floor(now / HOUR_MS);
     const hours = await this.ctx.db
       .query('hours')
-      .withIndex('by_hour', (q) => q.eq('competitionId', this.competitionId).gt('hour', nowHour - 24))
+      .withIndex('by_hour', (q) => q.eq('competitionId', this.competitionId).gte('hour', nowHour - 24))
       .collect();
-    const sum = { all: 0, designers: 0, others: 0 };
-    for (const h of hours) for (const segment of SEGMENTS) sum[segment] += h[segment];
-    return sum;
+    const recent: Record<Segment, { hour: number; votes: number }[]> = { all: [], designers: [], others: [] };
+    for (const h of hours) {
+      for (const segment of SEGMENTS) if (h[segment]) recent[segment].push({ hour: h.hour, votes: h[segment] });
+    }
+    return recent;
   }
 
   async save() {
@@ -426,7 +430,12 @@ class Tally {
    * Rebuild the snapshot the rankings page reads for `segment`, from the saved tallies; `id` is
    * the existing one, if known. Returns its id.
    */
-  async snapshot(segment: Segment, now: number, lastDay: number, id: Id<'snapshots'> | undefined) {
+  async snapshot(
+    segment: Segment,
+    now: number,
+    recent: { hour: number; votes: number }[],
+    id: Id<'snapshots'> | undefined
+  ) {
     const { db } = this.ctx;
     const competitionId = this.competitionId;
     const standings = this.standings.values();
@@ -492,7 +501,7 @@ class Tally {
       votes: counts.votes,
       voters: counts.voters,
       pairsSeen: counts.pairs,
-      lastDay,
+      recent,
       scores,
       closest: await duel('by_close', 'asc'),
       lopsided: await duel('by_lopsided', 'desc'),
@@ -578,11 +587,11 @@ export const run = internalMutation({
       return;
     }
 
-    const lastDay = await tally.lastDay(now);
+    const recent = await tally.recent(now);
     const snapshots = { ...progress.snapshots };
     for (const segment of SEGMENTS) {
       if (progress.stale || tally.changed.has(segment)) {
-        snapshots[segment] = await tally.snapshot(segment, now, lastDay[segment], snapshots[segment]);
+        snapshots[segment] = await tally.snapshot(segment, now, recent[segment], snapshots[segment]);
       }
     }
     await ctx.db.patch(progress._id, { cursor, counts: tally.counts, lastRunAt: now, stale: false, snapshots });

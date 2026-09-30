@@ -1,6 +1,6 @@
 import type { FunctionReturnType } from 'convex/server';
 import type { api } from '$convex/api';
-import { START_RATING } from '$shared';
+import { HOUR_MS, START_RATING } from '$shared';
 import type { PosterInfo } from '$lib/services/posters.svelte';
 
 export type { PosterInfo };
@@ -57,14 +57,18 @@ export function overview(posters: PosterInfo[], snap: Snapshot | null, live: num
     };
   };
 
+  // Hours from the viewer's midnight on (with a half-hour time zone, the hour it falls in counts
+  // too). Votes since the snapshot are all from today.
+  const fromHour = Math.floor(new Date().setHours(0, 0, 0, 0) / HOUR_MS);
+  const today = (snap?.recent ?? []).reduce((sum, h) => (h.hour >= fromHour ? sum + h.votes : sum), 0) + votes - tallied;
+
   const places = snap?.places;
   return {
     posters: rank(posters, snap?.scores ?? []),
     stats: {
       totalVotes: votes,
       voters: snap?.voters ?? 0,
-      // Votes since the snapshot are all from today.
-      lastDay: (snap?.lastDay ?? 0) + votes - tallied,
+      today,
       posterCount: posters.length,
       pairsSeen: snap?.pairsSeen ?? 0,
       possiblePairs: (posters.length * (posters.length - 1)) / 2
