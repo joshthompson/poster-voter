@@ -5,6 +5,7 @@
   import PolkaDots from '$lib/components/layout/PolkaDots.svelte';
   import SetupNotice from '$lib/components/layout/SetupNotice.svelte';
   import SiteHeader from '$lib/components/layout/SiteHeader.svelte';
+  import SiteShareButton from '$lib/features/share/SiteShareButton.svelte';
   import { sound } from '$lib/services/sound.svelte';
   import '$lib/styles/index.css';
 
@@ -28,6 +29,7 @@
   {/if}
 </main>
 <CoffeeButton />
+<SiteShareButton />
 
 <style>
   main {

@@ -3,6 +3,7 @@
   import IconButton from '$lib/components/ui/IconButton.svelte';
   import Pill from '$lib/components/ui/Pill.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
+  import { LinkSharer } from './share.svelte';
 
   // Shares a poster's page (`href`, as posterHref gives it) through the device's share menu, or
   // copies the link where there isn't one. A round icon button, or with `labelled` a pill that
@@ -16,12 +17,9 @@
     onhold
   }: { href: string; title: string; labelled?: boolean; onhold?: (held: boolean) => void } = $props();
 
-  const COPIED_MS = 2000;
-
+  const sharer = new LinkSharer();
   let hovered = false;
   let sharing = false;
-  let copied = $state(false);
-  let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
   const t = $derived(i18n.t.share);
 
@@ -39,26 +37,10 @@
     const url = new URL(href, location.href).href;
     update(() => (sharing = true));
     try {
-      await navigator.share({ title, url });
-    } catch (e) {
-      // Closing the menu without picking anything is fine. Otherwise there's no share menu here
-      // (calling the missing navigator.share threw) or it failed: copy the link instead.
-      if (!(e instanceof DOMException && e.name === 'AbortError')) await copy(url);
+      await sharer.share(url, title);
     } finally {
       update(() => (sharing = false));
     }
-  }
-
-  async function copy(url: string) {
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch (e) {
-      console.error(e);
-      return;
-    }
-    copied = true;
-    clearTimeout(copiedTimer);
-    copiedTimer = setTimeout(() => (copied = false), COPIED_MS);
   }
 </script>
 
@@ -77,7 +59,7 @@
       <img src={shareIcon} alt="" width="24" height="24" />
     </IconButton>
   {/if}
-  <span class="copied" class:shown={copied} role="status">{copied ? t.copied : ''}</span>
+  <span class="copied" class:shown={sharer.copied} role="status">{sharer.copied ? t.copied : ''}</span>
 </span>
 
 <style>
