@@ -1,6 +1,7 @@
 <script lang="ts">
   // A big white circle with the post-vote verdict, floating over the stage so it never moves
-  // the posters. Centred halfway between the middle and the bottom-right corner, kept on screen.
+  // the posters. Centred three-quarters of the way across and a little below the middle, clear of
+  // the result bar along the bottom of the poster under it; kept on screen.
 
   let { text, detail, leaving = false }: { text: string; detail?: string; leaving?: boolean } = $props();
 </script>
@@ -16,7 +17,9 @@
     --edge: 20px;
     position: absolute;
     left: min(75%, 100% - var(--size) / 2 - var(--edge));
-    top: min(75%, 100% - var(--size) / 2 - var(--edge));
+    /* Higher on short screens, where the posters fill the height and their result bars sit about
+       230px above the bottom, under the caption and footer. */
+    top: min(55%, 100% - var(--size) / 2 - 230px);
     z-index: 5;
     width: var(--size);
     height: var(--size);
@@ -47,6 +50,7 @@
     .verdict {
       --size: clamp(160px, 44vw, 220px);
       --edge: 12px;
+      top: min(75%, 100% - var(--size) / 2 - var(--edge));
     }
   }
   .leaving {
