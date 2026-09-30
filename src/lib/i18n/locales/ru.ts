@@ -113,7 +113,7 @@ export const ru: Messages = {
       `Итоги: ${num(votes)} ${plural(votes, 'поединок', 'поединка', 'поединков')}${among(segment)}.`,
     live: (votes: number, segment: Segment) =>
       `В прямом эфире: ${num(votes)} ${plural(votes, 'поединок', 'поединка', 'поединков')}${among(segment)}. ` +
-      'Обновляется по ходу голосования.',
+      'Рейтинг отстаёт не больше чем на 15 минут.',
     tallying: 'Пересчитываем горошины…',
     seeCurrent: 'Смотреть текущий рейтинг',
     loadError: (message: string) => `Не удалось загрузить результаты: ${message}`,

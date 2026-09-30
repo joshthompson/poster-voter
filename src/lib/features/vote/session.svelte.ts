@@ -34,7 +34,7 @@ export class VoteSession {
 
   #source: Source;
   #seen = createSeen();
-  #justVoted = new Set<string>(); // until the voted-pairs query catches up
+  #justVoted = new Set<string>(); // votes this visit; `votedKeys` is fetched once, before them
   #shownPairs = new Set<string>();
   #upcoming: Poster[] | null = null;
   #revealTimer: ReturnType<typeof setTimeout> | undefined;

@@ -114,7 +114,7 @@ export const en = {
     disagreeSub: 'Where designers and everyone else part ways.',
     final: (votes: number, segment: Segment) => `Final results from ${num(votes)} head-to-heads${by(segment)}.`,
     live: (votes: number, segment: Segment) =>
-      `Live from ${num(votes)} head-to-heads${by(segment)}. Updates as people vote.`,
+      `Live from ${num(votes)} head-to-heads${by(segment)}. Rankings are at most 15 minutes behind.`,
     tallying: 'Tallying the dots…',
     seeCurrent: 'See the current rankings',
     loadError: (message: string) => `Couldn’t load results: ${message}`,

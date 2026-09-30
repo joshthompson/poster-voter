@@ -1,29 +1,37 @@
 import { internalMutation, query } from './_generated/server';
 import { internal } from './_generated/api';
 import { v } from 'convex/values';
-import type { Id } from './_generated/dataModel';
-import { getActive } from './competitions';
-import { K, orderPair } from './votes';
+import type { Doc } from './_generated/dataModel';
+import { find } from './competitions';
+import { requestRun, startRebuild } from './tally';
 
-export const START_RATING = 1000;
+/** Identifies a competition's poster list as it is now; it changes whenever the list does. */
+export const posterVersion = (c: Doc<'competitions'>) => `${c._id}:${c.postersUpdatedAt ?? 0}`;
 
-/** Posters in the active competition. */
+/**
+ * A competition's current posters (by slug, or the active one), with the `version` of the list.
+ * Pages keep the list and pass its version as `since`: if it's still current, `posters` is null
+ * and nothing else is read, so a returning visitor is sent a few bytes instead of the list.
+ */
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
-    const competition = await getActive(ctx);
-    if (!competition) return [];
+  args: { competition: v.optional(v.string()), since: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const competition = await find(ctx, args.competition);
+    if (!competition) return { version: '', posters: [] };
+    const version = posterVersion(competition);
+    if (args.since === version) return { version, posters: null };
     const posters = await ctx.db
       .query('posters')
       .withIndex('by_competition_active', (q) => q.eq('competitionId', competition._id).eq('active', true))
       .collect();
-    return posters.map(({ _id, title, image }) => ({ _id, title, image }));
+    return { version, posters: posters.map(({ _id, title, image }) => ({ _id, title, image })) };
   }
 });
 
 /**
  * Make this the active competition (archiving any other), upsert its posters by key,
- * and deactivate any of its posters not in the list.
+ * and deactivate any of its posters not in the list. Only what differs is written, and the
+ * competition's poster version moves on only if the list changed, so pages keep their copy.
  * Called by `pnpm posters:sync`.
  */
 export const sync = internalMutation({
@@ -36,8 +44,12 @@ export const sync = internalMutation({
       .query('competitions')
       .withIndex('by_slug', (q) => q.eq('slug', competition.slug))
       .unique();
-    const competitionId = existingCompetition?._id ?? (await ctx.db.insert('competitions', { ...competition, active: true }));
-    if (existingCompetition) await ctx.db.patch(competitionId, { title: competition.title, active: true });
+    const competitionId =
+      existingCompetition?._id ??
+      (await ctx.db.insert('competitions', { ...competition, active: true, postersUpdatedAt: Date.now() }));
+    if (existingCompetition && (existingCompetition.title !== competition.title || !existingCompetition.active)) {
+      await ctx.db.patch(competitionId, { title: competition.title, active: true });
+    }
 
     const archived: string[] = [];
     for (const c of await ctx.db
@@ -50,13 +62,12 @@ export const sync = internalMutation({
     }
 
     // Posters from before competitions existed belong to the first one synced, votes and all.
-    for (const p of await ctx.db
+    const adopted = await ctx.db
       .query('posters')
       .withIndex('by_competition_key', (q) => q.eq('competitionId', undefined))
-      .collect()) {
-      await ctx.db.patch(p._id, { competitionId });
-    }
-    await ctx.scheduler.runAfter(0, internal.votes.backfill, {});
+      .collect();
+    for (const p of adopted) await ctx.db.patch(p._id, { competitionId });
+    if (adopted.length) await ctx.scheduler.runAfter(0, internal.votes.backfill, {});
 
     const keys = new Set(posters.map((p) => p.key));
     let added = 0;
@@ -69,17 +80,11 @@ export const sync = internalMutation({
         .withIndex('by_competition_key', (q) => q.eq('competitionId', competitionId).eq('key', p.key))
         .unique();
       if (existing) {
+        if (existing.title === p.title && existing.image === p.image && existing.active) continue;
         await ctx.db.patch(existing._id, { title: p.title, image: p.image, active: true });
         updated++;
       } else {
-        await ctx.db.insert('posters', {
-          ...p,
-          competitionId,
-          active: true,
-          rating: START_RATING,
-          wins: 0,
-          losses: 0
-        });
+        await ctx.db.insert('posters', { ...p, competitionId, active: true });
         added++;
       }
     }
@@ -94,14 +99,31 @@ export const sync = internalMutation({
       }
     }
 
+    const changed = adopted.length + added + updated + deactivated > 0;
+    if (!changed) return { competition: competition.title, archived, added, updated, deactivated };
+    if (existingCompetition) await ctx.db.patch(competitionId, { postersUpdatedAt: Date.now() });
+
+    // Standings mirror whether their poster is active, and the snapshots need rebuilding to match.
+    for (const p of await ctx.db
+      .query('posters')
+      .withIndex('by_competition_key', (q) => q.eq('competitionId', competitionId))
+      .collect()) {
+      const standing = await ctx.db
+        .query('standings')
+        .withIndex('by_poster', (q) => q.eq('posterId', p._id))
+        .unique();
+      if (standing && standing.active !== p.active) await ctx.db.patch(standing._id, { active: p.active });
+    }
+    await requestRun(ctx, competitionId, { now: true, stale: true });
+
     return { competition: competition.title, archived, added, updated, deactivated };
   }
 });
 
 /**
  * Fold a duplicate poster into the one being kept: its votes move over (votes between the two are
- * dropped, since a poster can't beat itself), pair tallies are rebuilt, every poster's rating is
- * replayed from the votes, and the duplicate is deleted. Run it once with `npx convex run`.
+ * dropped, since a poster can't beat itself), the duplicate is deleted, and the competition is
+ * re-tallied from its votes. Run it once with `npx convex run`.
  */
 export const merge = internalMutation({
   args: { competition: v.string(), keepKey: v.string(), dropKey: v.string() },
@@ -120,73 +142,32 @@ export const merge = internalMutation({
     const drop = await byKey(dropKey);
     if (!keep || !drop) throw new Error(`Missing poster: ${!keep ? keepKey : dropKey}`);
 
-    const votes = await ctx.db
-      .query('votes')
-      .withIndex('by_competition', (q) => q.eq('competitionId', competition._id))
-      .collect();
-    const posterIds = new Set(
-      (
-        await ctx.db
-          .query('posters')
-          .withIndex('by_competition_key', (q) => q.eq('competitionId', competition._id))
-          .collect()
-      ).map((p) => p._id)
-    );
-
-    // Pair rows touching the duplicate are rebuilt from the votes below.
-    const touched = new Set<Id<'posters'>>([keep._id, drop._id]);
-    for (const p of await ctx.db.query('pairs').collect()) {
-      if (touched.has(p.aId) || touched.has(p.bId)) await ctx.db.delete(p._id);
-    }
-
     let moved = 0;
     let dropped = 0;
-    const replay: { winnerId: Id<'posters'>; loserId: Id<'posters'> }[] = [];
-    for (const vote of votes) {
+    for (const vote of await ctx.db
+      .query('votes')
+      .withIndex('by_competition', (q) => q.eq('competitionId', competition._id))
+      .collect()) {
       const winnerId = vote.winnerId === drop._id ? keep._id : vote.winnerId;
       const loserId = vote.loserId === drop._id ? keep._id : vote.loserId;
       if (winnerId === loserId) {
         await ctx.db.delete(vote._id);
         dropped++;
-        continue;
-      }
-      if (winnerId !== vote.winnerId || loserId !== vote.loserId) {
+      } else if (winnerId !== vote.winnerId || loserId !== vote.loserId) {
         await ctx.db.patch(vote._id, { winnerId, loserId });
         moved++;
       }
-      replay.push({ winnerId, loserId });
     }
 
-    // Same Elo replay as `votes.cast`, so the stored ratings match a fresh count.
-    const scores = new Map<Id<'posters'>, { rating: number; wins: number; losses: number }>();
-    const score = (id: Id<'posters'>) => {
-      let s = scores.get(id);
-      if (!s) scores.set(id, (s = { rating: START_RATING, wins: 0, losses: 0 }));
-      return s;
-    };
-    const keptPairs = new Map<string, { aId: Id<'posters'>; bId: Id<'posters'>; aWins: number; bWins: number }>();
-    for (const { winnerId, loserId } of replay) {
-      const w = score(winnerId);
-      const l = score(loserId);
-      const delta = K * (1 - 1 / (1 + 10 ** ((l.rating - w.rating) / 400)));
-      w.rating += delta;
-      w.wins++;
-      l.rating -= delta;
-      l.losses++;
-      if (winnerId !== keep._id && loserId !== keep._id) continue;
-      const [aId, bId] = orderPair(winnerId, loserId);
-      const key = `${aId}|${bId}`;
-      const pair = keptPairs.get(key) ?? { aId, bId, aWins: 0, bWins: 0 };
-      if (winnerId === aId) pair.aWins++;
-      else pair.bWins++;
-      keptPairs.set(key, pair);
-    }
-    for (const pair of keptPairs.values()) await ctx.db.insert('pairs', pair);
-    for (const id of posterIds) {
-      if (id !== drop._id) await ctx.db.patch(id, score(id));
-    }
+    const standing = await ctx.db
+      .query('standings')
+      .withIndex('by_poster', (q) => q.eq('posterId', drop._id))
+      .unique();
+    if (standing) await ctx.db.delete(standing._id);
     await ctx.db.delete(drop._id);
+    await ctx.db.patch(competition._id, { postersUpdatedAt: Date.now() });
+    await startRebuild(ctx, competition._id);
 
-    return { kept: keep.title, removed: drop.title, votesMoved: moved, votesDropped: dropped, pairs: keptPairs.size };
+    return { kept: keep.title, removed: drop.title, votesMoved: moved, votesDropped: dropped };
   }
 });

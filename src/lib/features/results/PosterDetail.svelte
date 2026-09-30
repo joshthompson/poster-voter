@@ -9,6 +9,7 @@
   import { posterSrc } from '$lib/utils/images';
   import { countryName, flag } from '$lib/utils/places';
   import { pct } from './format';
+  import { detail as hydrate, type PosterInfo } from './hydrate';
   import type { RankedPoster } from './types';
 
   // A ranked poster opened in a modal: the big image, its numbers, how it does with designers
@@ -18,17 +19,22 @@
   let {
     poster,
     segment,
-    competition,
+    posterById,
     onclose
-  }: { poster: RankedPoster | null; segment: Segment; competition?: string; onclose: () => void } = $props();
+  }: {
+    poster: RankedPoster | null;
+    segment: Segment;
+    /** The competition's posters, to name the opponents. */
+    posterById: Map<PosterInfo['_id'], PosterInfo>;
+    onclose: () => void;
+  } = $props();
 
   const SHOWN_OPPONENTS = 8;
 
   let dialog: HTMLDialogElement;
   const t = $derived(i18n.t.results);
-  const detail = useQuery(api.results.poster, () =>
-    poster ? { id: poster._id, segment, competition } : 'skip'
-  );
+  const query = useQuery(api.results.poster, () => (poster ? { id: poster._id, segment } : 'skip'));
+  const detail = $derived({ data: query.data && hydrate(query.data, posterById) });
 
   $effect(() => {
     if (poster && !dialog.open) dialog.showModal();

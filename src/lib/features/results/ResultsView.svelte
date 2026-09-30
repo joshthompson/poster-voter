@@ -4,6 +4,8 @@
   import { api } from '$convex/api';
   import Loader from '$lib/components/ui/Loader.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
+  import { usePosters } from '$lib/services/posters.svelte';
+  import { visibility } from '$lib/state/visibility.svelte';
   import Disagreements from './Disagreements.svelte';
   import Highlights from './Highlights.svelte';
   import Leaderboard from './Leaderboard.svelte';
@@ -14,30 +16,55 @@
   import ResultsHero from './ResultsHero.svelte';
   import StatTiles from './StatTiles.svelte';
   import ViewFilters from './ViewFilters.svelte';
+  import { disagreements, overview } from './hydrate';
   import type { RankedPoster, View } from './types';
 
   // A competition's results: the active one, or the one named by `slug` (usually archived).
-  // Everyone / designers / non-designers share the overview; disagreements has its own query,
-  // with everyone's overview kept loaded behind it for the poster modal.
+  // Each view reads its segment's snapshot (rebuilt at most every 15 minutes as votes come in), the
+  // live vote counts, and the poster list the snapshots' ids are joined to. Disagreements
+  // compares the designers' and non-designers' snapshots, with everyone's kept for the modal.
 
   let { slug }: { slug?: string } = $props();
 
   let view = $state<View>('all');
+  // The voter group the rankings are showing (everyone's, behind the disagreements).
+  const segment = $derived(view === 'disagree' ? 'all' : view);
+  // Live queries pause while the tab has been in the background for a while.
+  const live = <A,>(args: A) => (visibility.away ? ('skip' as const) : args);
 
-  const overview = useQuery(
-    api.results.overview,
-    () => ({ segment: view === 'disagree' ? 'all' : view, competition: slug }),
+  const posterList = usePosters(() => slug);
+  const main = useQuery(api.results.snapshot, () => live({ segment, competition: slug }), { keepPreviousData: true });
+  const counts = useQuery(api.results.live, () => live({ competition: slug }), { keepPreviousData: true });
+  const designerSnap = useQuery(
+    api.results.snapshot,
+    () => (view === 'disagree' ? live({ segment: 'designers', competition: slug }) : 'skip'),
     { keepPreviousData: true }
   );
-  const split = useQuery(api.results.disagreements, () => (view === 'disagree' ? { competition: slug } : 'skip'));
+  const otherSnap = useQuery(
+    api.results.snapshot,
+    () => (view === 'disagree' ? live({ segment: 'others', competition: slug }) : 'skip'),
+    { keepPreviousData: true }
+  );
 
   const t = $derived(i18n.t.results);
-  const data = $derived(overview.data);
-  const competition = $derived(view === 'disagree' ? split.data?.competition : data?.competition);
+  const posters = $derived(posterList.data ?? []);
+  const posterById = $derived(new Map(posters.map((p) => [p._id, p])));
+  const competition = $derived(main.data?.competition);
   const archived = $derived(competition?.active === false);
-  const missing = $derived(view === 'disagree' ? split.data === null : overview.data === null);
-  // The voter group the overview is showing (the overview is skipped for 'disagree').
-  const segment = $derived(view === 'disagree' ? 'all' : view);
+  const missing = $derived(main.data === null);
+  const error = $derived(main.error ?? posterList.error ?? counts.error);
+  const liveVotes = $derived(counts.data?.[segment]);
+  // Votes are in but the first tally hasn't finished yet.
+  const tallying = $derived(!!main.data && !main.data.snapshot && (liveVotes ?? 0) > 0);
+  const data = $derived(
+    main.data && posterList.data && !tallying ? overview(posters, main.data.snapshot, liveVotes) : undefined
+  );
+  const split = $derived(
+    view === 'disagree' && posterList.data && designerSnap.data !== undefined && otherSnap.data !== undefined
+      ? disagreements(posters, designerSnap.data?.snapshot ?? null, otherSnap.data?.snapshot ?? null)
+      : undefined
+  );
+  const splitError = $derived(designerSnap.error ?? otherSnap.error);
 
   // The poster open in the detail modal, looked up in the live list so its numbers keep updating.
   let openId = $state<RankedPoster['_id'] | null>(null);
@@ -81,17 +108,17 @@
   <ViewFilters bind:value={view} />
 
   {#if view === 'disagree'}
-    {#if split.error}
-      <Note>{t.loadError(split.error.message)}</Note>
-    {:else if !split.data}
+    {#if splitError}
+      <Note>{t.loadError(splitError.message)}</Note>
+    {:else if !split}
       <div class="loading"><Loader /></div>
-    {:else if !split.data.posters.length}
-      <Note>{t.notEnough(split.data.minMatches, split.data.designerVotes, split.data.otherVotes)}</Note>
+    {:else if !split.posters.length}
+      <Note>{t.notEnough(split.minMatches, split.designerVotes, split.otherVotes)}</Note>
     {:else}
-      <Disagreements posters={split.data.posters} {onopen} />
+      <Disagreements posters={split.posters} {onopen} />
     {/if}
-  {:else if overview.error}
-    <Note>{t.loadError(overview.error.message)}</Note>
+  {:else if error}
+    <Note>{t.loadError(error.message)}</Note>
   {:else if data}
     <StatTiles {stats} />
 
@@ -117,7 +144,7 @@
   {/if}
 {/if}
 
-<PosterDetail poster={openPoster} {segment} competition={slug} onclose={() => (openId = null)} />
+<PosterDetail poster={openPoster} {segment} {posterById} onclose={() => (openId = null)} />
 
 <style>
   .loading {

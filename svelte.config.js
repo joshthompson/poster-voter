@@ -10,8 +10,9 @@ const config = {
     // Empty for the custom domain (postervote.com); e.g. BASE_PATH=/postervote for
     // https://<user>.github.io/postervote. A lone "/" (GitHub variables can't be empty) means root.
     paths: { base: (process.env.BASE_PATH ?? '').replace(/\/+$/, '') },
-    // Convex's generated client code: `import { api } from '$convex/api'`.
-    alias: { $convex: 'convex/_generated' }
+    // Convex's generated client code: `import { api } from '$convex/api'`, and the constants and
+    // helpers shared with the Convex functions: `import { START_RATING } from '$shared'`.
+    alias: { $convex: 'convex/_generated', $shared: 'convex/shared.ts' }
   }
 };
 

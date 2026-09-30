@@ -1,6 +1,6 @@
 # Poster Vote
 
-Two posters fly out, you pick your favourite, and then you see how everyone else voted on that pair. Every vote updates an Elo rating, and `/results` shows the live rankings.
+Two posters fly out, you pick your favourite, and then you see how everyone else voted on that pair. The votes feed an Elo rating for each poster, and `/results` shows the rankings.
 
 - **Frontend:** SvelteKit (Svelte 5), static build for GitHub Pages
 - **Backend:** Convex (`convex/`)
@@ -66,6 +66,19 @@ Titles default to the filename (`001.jpg` becomes "No. 1"). To set your own, add
 
 Note: `pnpm deploy` is a built-in pnpm command, so the full release script is called `ship`.
 
+## How the rankings are counted
+
+Casting a vote only records it (`votes.cast`) and bumps a small live counter. A background job, `tally.run` in `convex/tally.ts`, then processes each vote once. It updates the Elo standings, head-to-heads, voters, places and hourly counts, and rebuilds one compact snapshot per voter group. It runs a minute after the first vote following a quiet spell, and then at most every 15 minutes while votes keep coming, so the rankings are never more than 15 minutes behind. The rankings page reads those snapshots and the live counter, never the votes themselves, so its cost stays flat as votes pile up. Pages keep the poster list in localStorage with a version stamp, and the server only sends it again when a sync changes it. This keeps the app well inside Convex's free tier.
+
+After a normal deploy nothing needs running: the first vote, or the hourly check in `convex/crons.ts`, starts the tally. For maintenance (add `--prod` for production):
+
+| Command                                                       | What it does                                                                 |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `npx convex run migrations:rebuild`                           | Recount every competition from its votes (the old rankings show until done)  |
+| `npx convex run posters:merge '{"competition":"<slug>","keepKey":"060.jpg","dropKey":"061.jpg"}'` | Fold a duplicate poster into another, then recount                      |
+| `npx convex run migrations:tallyAll`                          | Start the tally for competitions that have never had one (e.g. old archives) |
+| `npx convex run migrations:cleanupLegacy`                     | Remove scores stored the old way (on posters and in `pairs`)                 |
+
 ## Code layout
 
 Routes in `src/routes/` are thin: each page composes components from `src/lib/`.
@@ -82,7 +95,7 @@ Routes in `src/routes/` are thin: each page composes components from `src/lib/`.
 | `lib/utils/`              | Small pure helpers                                                                  |
 | `lib/styles/`             | Global CSS: design tokens, element defaults, the `.legible` utility, shared keyframes |
 
-Import Convex's generated code through the `$convex` alias, e.g. `import { api } from '$convex/api'`.
+Import Convex's generated code through the `$convex` alias, e.g. `import { api } from '$convex/api'`, and the constants shared with the Convex functions through `$shared` (`convex/shared.ts`).
 
 ## Deploying to GitHub Pages
 

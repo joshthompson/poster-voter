@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { useConvexClient, useQuery } from 'convex-svelte';
+  import { useConvexClient } from 'convex-svelte';
   import { resolve } from '$app/paths';
   import { api } from '$convex/api';
   import Button from '$lib/components/ui/Button.svelte';
@@ -11,6 +11,7 @@
   import { designer } from '$lib/state/designer.svelte';
   import { sound } from '$lib/services/sound.svelte';
   import { location } from '$lib/services/location';
+  import { usePosters } from '$lib/services/posters.svelte';
   import { voterId } from '$lib/services/voter';
   import { i18n } from '$lib/i18n/index.svelte';
   import PosterCard from './PosterCard.svelte';
@@ -26,11 +27,19 @@
   const me = voterId();
   location(); // start the lookup now so it's ready by the first vote
   const client = useConvexClient();
-  const posters = useQuery(api.posters.list, {});
-  const myVotes = useQuery(api.votes.mine, { voterId: me });
+  const posters = usePosters(() => undefined);
+  // The pairs you've voted on, fetched once: the session remembers the ones you vote on from here.
+  let myVotes = $state<{ keys: string[] | null; failed: boolean }>({ keys: null, failed: false });
+  client.query(api.votes.mine, { voterId: me }).then(
+    (keys) => (myVotes = { keys, failed: false }),
+    (e) => {
+      console.error(e);
+      myVotes = { keys: [], failed: true };
+    }
+  );
 
   const list = $derived((posters.data ?? []) as Poster[]);
-  const votedKeys = $derived(new Set(myVotes.data ?? []));
+  const votedKeys = $derived(new Set(myVotes.keys ?? []));
 
   const session = new VoteSession({
     posters: () => list,
@@ -49,7 +58,7 @@
   let started = $state(sound.unlocked);
 
   $effect(() => {
-    if (started && (myVotes.data || myVotes.error)) session.refresh();
+    if (started && myVotes.keys) session.refresh();
   });
 
   function start() {

@@ -110,7 +110,7 @@ export const sv: Messages = {
     final: (votes: number, segment: Segment) =>
       `Slutresultat från ${num(votes)} ${plural(votes, 'duell', 'dueller')}${by(segment)}.`,
     live: (votes: number, segment: Segment) =>
-      `Live från ${num(votes)} ${plural(votes, 'duell', 'dueller')}${by(segment)}. Uppdateras medan folk röstar.`,
+      `Live från ${num(votes)} ${plural(votes, 'duell', 'dueller')}${by(segment)}. Topplistan ligger högst 15 minuter efter.`,
     tallying: 'Räknar prickarna…',
     seeCurrent: 'Se den aktuella topplistan',
     loadError: (message: string) => `Kunde inte ladda resultaten: ${message}`,

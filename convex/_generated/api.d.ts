@@ -9,8 +9,12 @@
  */
 
 import type * as competitions from "../competitions.js";
+import type * as crons from "../crons.js";
+import type * as migrations from "../migrations.js";
 import type * as posters from "../posters.js";
 import type * as results from "../results.js";
+import type * as shared from "../shared.js";
+import type * as tally from "../tally.js";
 import type * as votes from "../votes.js";
 
 import type {
@@ -21,8 +25,12 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   competitions: typeof competitions;
+  crons: typeof crons;
+  migrations: typeof migrations;
   posters: typeof posters;
   results: typeof results;
+  shared: typeof shared;
+  tally: typeof tally;
   votes: typeof votes;
 }>;
 
