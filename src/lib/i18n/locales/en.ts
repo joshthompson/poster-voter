@@ -151,6 +151,15 @@ export const en = {
       // [before, link text, after]
       more: ['Read more about the ', 'Elo rating system', ' on Wikipedia.'],
       url: 'https://en.wikipedia.org/wiki/Elo_rating_system'
+    },
+    font: {
+      title: 'Our Font',
+      // Every other piece, from the second, is set in Remi Pop.
+      made: ['We made a font called ', 'Remi Pop', ' for ', 'Poster Vote!', ' to give this project a unique feel and playfulness.'],
+      download: 'If you want to use it on your own project, download it here:',
+      button: 'Download Remi Pop (.ttf)',
+      tellUs:
+        'If you do use it, please contact us on our socials to let us know! The font is evolving with the site, so let us know if there are characters that are missing that you need.'
     }
   },
 

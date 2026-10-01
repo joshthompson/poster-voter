@@ -146,6 +146,14 @@ export const sv: Messages = {
       ],
       more: ['Läs mer om ', 'Elo-rating', ' på Wikipedia.'],
       url: 'https://sv.wikipedia.org/wiki/Elo-rating'
+    },
+    font: {
+      title: 'Vårt typsnitt',
+      made: ['Vi gjorde ett typsnitt som heter ', 'Remi Pop', ' för ', 'Poster Vote!', ' för att ge projektet en unik och lekfull känsla.'],
+      download: 'Vill du använda det i ditt eget projekt kan du ladda ner det här:',
+      button: 'Ladda ner Remi Pop (.ttf)',
+      tellUs:
+        'Om du använder det får du gärna höra av dig på våra sociala medier och berätta! Typsnittet växer tillsammans med sajten, så säg till om det saknas tecken som du behöver.'
     }
   },
 

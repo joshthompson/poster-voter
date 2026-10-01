@@ -1,18 +1,21 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
-  // A small rounded text button, or a link when given `href`.
+  // A small rounded text button, or a link when given `href` (with `download`, one that saves the
+  // file under that name).
   // `ink` is solid dark, `red` is the call to action, `outline` is the quiet option.
   // `pressed` marks the selected option in a group of toggles.
 
   let {
     href,
+    download,
     onclick,
     variant = 'outline',
     pressed,
     children
   }: {
     href?: string;
+    download?: string;
     onclick?: (e: MouseEvent) => void;
     variant?: 'ink' | 'red' | 'outline';
     pressed?: boolean;
@@ -21,7 +24,7 @@
 </script>
 
 {#if href}
-  <a class="pill {variant}" {href} {onclick}>{@render children()}</a>
+  <a class="pill {variant}" {href} {download} {onclick}>{@render children()}</a>
 {:else}
   <button class="pill {variant}" {onclick} aria-pressed={pressed}>{@render children()}</button>
 {/if}

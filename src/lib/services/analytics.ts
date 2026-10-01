@@ -54,6 +54,8 @@ export type Events = {
   poster_shared: AboutPoster & { placement: 'vote_reveal' | 'rankings_modal' | 'poster_page'; outcome: ShareOutcome };
   site_shared: { outcome: ShareOutcome };
   coffee_link_clicked: { placement: 'corner_button' | 'about_page' };
+  /** The download button in the About page's section on the font. */
+  font_downloaded: Record<string, never>;
   social_link_clicked: {
     person: 'alisa' | 'josh';
     network: 'instagram' | 'substack' | 'telegram' | 'youtube' | 'website';

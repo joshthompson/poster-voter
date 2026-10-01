@@ -57,6 +57,7 @@ Nothing is stored on the device: `disable_persistence` keeps the visitor's id ou
 | `poster_shared` | A poster share finishes | `competition`, `poster_id`, `poster_title`, `placement`: `vote_reveal` / `rankings_modal` / `poster_page`, `outcome` | `VoteStage.svelte`, `features/results/ResultsView.svelte`, `features/results/PosterView.svelte` |
 | `site_shared` | The corner share button finishes | `outcome` | `features/share/SiteShareButton.svelte` |
 | `coffee_link_clicked` | Buy Me a Coffee | `placement`: `corner_button` / `about_page` | `components/layout/CoffeeButton.svelte` |
+| `font_downloaded` | The download button in the About page's Remi Pop section | none | `routes/about/+page.svelte` |
 | `social_link_clicked` | A profile link under a maker's name | `person`: `alisa` / `josh`, `network`: `instagram` / `substack` / `telegram` / `youtube` / `website`, `url` | `routes/about/+page.svelte` |
 | `language_changed` | A different language picked (the new one is `language`) | `previous_language` | `features/settings/LanguagePicker.svelte` |
 | `sound_toggled` | The mute button (the new setting is `is_sound_muted`) | none | `components/layout/MuteButton.svelte` |

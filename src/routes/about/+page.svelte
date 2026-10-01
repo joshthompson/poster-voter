@@ -3,12 +3,15 @@
   import Page from '$lib/components/layout/Page.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import PageTitle from '$lib/components/ui/PageTitle.svelte';
+  import Pill from '$lib/components/ui/Pill.svelte';
   import PixelText from '$lib/components/pixel/PixelText.svelte';
   import instagram from '$lib/assets/instagram.png';
   import substack from '$lib/assets/substack.png';
   import telegram from '$lib/assets/telegram.png';
   import www from '$lib/assets/www.png';
   import youtube from '$lib/assets/youtube.png';
+  // The font as `pnpm font` builds it, for visitors to download.
+  import remiPop from '$lib/assets/fonts/remi-pop.ttf';
   import { i18n } from '$lib/i18n/index.svelte';
   import { track } from '$lib/services/analytics';
 
@@ -83,6 +86,21 @@
         <p>{t.elo.more[0]}<a href={t.elo.url} target="_blank" rel="noopener">{t.elo.more[1]}</a>{t.elo.more[2]}</p>
       </div>
     </Card>
+    <Card delay={0.45}>
+      <h2>{t.font.title}</h2>
+      <div class="body font">
+        <p>
+          {#each t.font.made as piece, i (i)}{#if i % 2}<PixelText text={piece} color="var(--ink)" />{:else}{piece}{/if}{/each}
+        </p>
+        <p>{t.font.download}</p>
+        <p>
+          <Pill variant="red" href={remiPop} download="Remi Pop.ttf" onclick={() => track('font_downloaded', {})}>
+            {t.font.button}
+          </Pill>
+        </p>
+        <p>{t.font.tellUs}</p>
+      </div>
+    </Card>
   </div>
 </Page>
 
@@ -104,6 +122,15 @@
   }
   .body p {
     margin: 0;
+  }
+  /* The font's name, and the site's, in the font itself: at body-text size, standing on the
+     line like the words around them. */
+  .font {
+    --text-px: 0.5;
+    --text-px-sm: 0.5;
+  }
+  .font :global(.pixel-text) {
+    vertical-align: baseline;
   }
   .label {
     margin: 0 0 6px;
