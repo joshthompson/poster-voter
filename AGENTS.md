@@ -13,6 +13,7 @@ Mixpanel is the only analytics tool. Don't add another without being asked.
 | Tracking | client-side only; no CDP |
 | Consent | not asked for, because nothing is stored on the device (see below) |
 | Token | `TOKEN` in `src/lib/services/analytics.ts`. Project tokens are public, since every page that sends events includes one. |
+| Region | EU data residency (project 4069071), so `api_host` is `https://api-eu.mixpanel.com`. Without it, the SDK sends to the US servers and the events never arrive. |
 | Where it sends | only from the live site. `pnpm dev` and `pnpm preview` log each event to the console as `[analytics] <event> {…}` instead. |
 
 ### How it works

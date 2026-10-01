@@ -85,6 +85,8 @@ let started = false;
 function client() {
   if (!started) {
     mixpanel.init(TOKEN, {
+      // The project has EU data residency; the SDK sends to the US servers by default.
+      api_host: 'https://api-eu.mixpanel.com',
       // Store nothing on the device. Persistence keeps the visitor's id in a cookie, and batching
       // keeps a queue of unsent events in localStorage even with persistence off.
       disable_persistence: true,
