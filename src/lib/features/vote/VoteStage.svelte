@@ -142,9 +142,17 @@
   const t = $derived(i18n.t.vote);
   const leaving = $derived(session.phase === 'exit');
   const showingResult = $derived(session.phase === 'reveal' || leaving);
+  // Each pair moves on to the next wording of the verdict, from a random start for each visit.
+  const firstVariant = Math.floor(Math.random() * 100);
   const verdict = $derived(
     showingResult
-      ? verdictFor(t, { error: session.error, result: session.result, chosen: session.chosen, streak: session.streak })
+      ? verdictFor(t, {
+          error: session.error,
+          result: session.result,
+          chosen: session.chosen,
+          streak: session.streak,
+          variant: firstVariant + session.round
+        })
       : ''
   );
 </script>

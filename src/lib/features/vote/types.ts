@@ -9,5 +9,8 @@ export type Poster = { _id: Id<'posters'>; title: string; image: string };
  */
 export type Phase = 'loading' | 'enter' | 'choose' | 'reveal' | 'exit' | 'seenAll' | 'done';
 
-/** Each side's share of the votes on this pair (by screen position), and how many votes that is. */
-export type VoteResult = { pct: [number, number]; total: number };
+/**
+ * The votes on this pair, by screen position: each side's share as shown (rounded to a whole
+ * percent), each side's count, and the two added up.
+ */
+export type VoteResult = { pct: [number, number]; votes: [number, number]; total: number };

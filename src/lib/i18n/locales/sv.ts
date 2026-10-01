@@ -64,13 +64,55 @@ export const sv: Messages = {
     next: 'Nästa par →',
     error: 'Rösten försvann bland prickarna. Prova nästa par!',
     verdict: {
-      tie: 'Helt oavgjort. Prickarna darrar.',
-      unanimous: 'Enhälligt. Alla håller med.',
-      obvious: 'Självklart. Nästan alla håller med.',
-      streak: (n: number) => `I takt med massan — ${num(n)} i rad!`,
-      crowd: 'Du håller med de flesta.',
-      contrarian: 'En äkta rebell. Ikoniskt.',
-      minority: 'Modig smak — du är i minoritet.'
+      tie: [
+        'Helt oavgjort. Rösterna står och väger.',
+        'Delade meningar — det är 50/50!',
+        'Dött lopp! Båda affischerna har lika många röster.',
+        'Låst läge! Rösterna är exakt jämnt fördelade.',
+        'Oavgjort! Är de här två lika starka?'
+      ],
+      unanimous: [
+        'Enhälligt. Alla håller med.',
+        'Enhälligt! Alla är överens.',
+        'Total enighet — 100 % av rösterna är likadana.',
+        'Fullständig konsensus! Varenda röst håller med.',
+        'Enhälligt beslut! Inte en enda röst emot.'
+      ],
+      obvious: [
+        'Självklart. Nästan alla håller med.',
+        'Överväldigande! Nästan alla är med på noterna.',
+        'Nästan rent hus! En stor majoritet håller med.',
+        'Tydlig majoritet! Nästan alla röster går åt samma håll.',
+        'Klar vinnare! De allra flesta håller med.'
+      ],
+      streak: (n: number) => [
+        `I takt med massan — ${num(n)} i rad!`,
+        `Helt i synk — ${num(n)} i rad!`,
+        `På rulle — ${num(n)} i rad!`,
+        `Mitt i prick med massan — ${num(n)} i rad!`,
+        `Samma smak som massan — ${num(n)} i rad!`
+      ],
+      crowd: [
+        'Du håller med de flesta.',
+        'Du följer massan — och är i gott sällskap.',
+        'I linje med majoriteten — du är en av många.',
+        'Med strömmen — du hör till majoriteten.',
+        'Majoriteten bestämmer — och du valde vinnaren.'
+      ],
+      contrarian: [
+        'En äkta rebell. Ikoniskt.',
+        'Mot strömmen — du sticker ut från mängden.',
+        'Självständig tänkare — du går din egen väg.',
+        'Som en ensamvarg — du röstade mot massan.',
+        'Mot massan! Du styr ditt eget öde.'
+      ],
+      minority: [
+        'Modig smak — du är i minoritet.',
+        'I minoritet — följ ditt hjärta!',
+        'Ingen säger åt dig hur du ska rösta.',
+        'Du tänker annorlunda än massan — precis som du ska!',
+        'Rebellröst — du bröt dig loss från majoriteten.'
+      ]
     }
   },
 

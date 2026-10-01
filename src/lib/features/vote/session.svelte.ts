@@ -94,8 +94,10 @@ export class VoteSession {
       const r = await this.#source.cast(winner, loser);
       const total = r.winnerVotes + r.loserVotes;
       const w = Math.round((r.winnerVotes / total) * 100);
-      this.result = { pct: i === 0 ? [w, 100 - w] : [100 - w, w], total };
-      this.streak = w >= 50 ? this.streak + 1 : 0;
+      const bySide = (mine: number, other: number): [number, number] => (i === 0 ? [mine, other] : [other, mine]);
+      this.result = { pct: bySide(w, 100 - w), votes: bySide(r.winnerVotes, r.loserVotes), total };
+      // A tie keeps the streak going. Counted from the votes, as 49.6% would round up to 50.
+      this.streak = r.winnerVotes >= r.loserVotes ? this.streak + 1 : 0;
     } catch (e) {
       this.error = true;
       console.error(e);

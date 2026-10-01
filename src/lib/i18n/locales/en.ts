@@ -64,14 +64,57 @@ export const en = {
     skip: 'Can’t decide? Skip →',
     next: 'Next pair →',
     error: 'That vote got lost in the dots. Try the next pair!',
+    // A few wordings of each, one picked per pair (see verdict.ts).
     verdict: {
-      tie: 'A perfect tie. The dots are trembling.',
-      unanimous: 'Unanimous. Everyone agrees.',
-      obvious: 'Obviously. Almost everyone agrees.',
-      streak: (n: number) => `In tune with the crowd — ${num(n)} in a row!`,
-      crowd: 'You’re with the crowd.',
-      contrarian: 'A true contrarian. Iconic.',
-      minority: 'Bold taste — you’re in the minority.'
+      tie: [
+        'A perfect tie. The votes are neck and neck.',
+        'Split decision — it’s 50/50!',
+        'It’s a dead heat! Both posters have equal votes.',
+        'Deadlock! The votes are perfectly even.',
+        'It’s a draw! Are these two perfectly matched?'
+      ],
+      unanimous: [
+        'Unanimous. Everyone agrees.',
+        'Unanimous! Everyone’s on the same page.',
+        'Complete agreement — 100% of votes are the same.',
+        'Total consensus! Every single vote agrees.',
+        'Unanimous decision! Not one vote against.'
+      ],
+      obvious: [
+        'Obviously. Almost everyone agrees.',
+        'Overwhelming agreement! Almost everyone’s on board.',
+        'Nearly a clean sweep! The majority rules.',
+        'Decisive majority! Almost all votes line up.',
+        'Clear winner! A vast majority agrees.'
+      ],
+      streak: (n: number) => [
+        `In tune with the crowd — ${num(n)} in a row!`,
+        `In complete sync — ${num(n)} in a row!`,
+        `On a roll — ${num(n)} in a row!`,
+        `Spot on with the crowd — ${num(n)} in a row!`,
+        `Crowd consensus — ${num(n)} in a row!`
+      ],
+      crowd: [
+        'You’re with the crowd.',
+        'Following the crowd — you’re in good company.',
+        'In line with the majority — you’re part of the crowd.',
+        'Going with the flow — you’re among the majority.',
+        'Majority rules — you picked the winner.'
+      ],
+      contrarian: [
+        'A true contrarian. Iconic.',
+        'Going against the grain — you stand out from the crowd.',
+        'Independent thinker — you march to your own beat.',
+        'Lone wolf energy — you voted against the masses.',
+        'Against the crowd! You’re in charge of your own destiny.'
+      ],
+      minority: [
+        'Bold taste — you’re in the minority.',
+        'In the minority — follow your heart!',
+        'No one tells you how to vote — you went against the crowd.',
+        'Thinking differently from the crowd — as you should!',
+        'Rogue voter — you broke from the majority.'
+      ]
     }
   },
 
