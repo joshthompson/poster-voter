@@ -65,7 +65,7 @@ Nothing is stored on the device: `disable_persistence` keeps the visitor's id ou
 | `vote_history_cleared` | "Clear" in Settings, once confirmed (sent by beacon, since the page reloads) | `vote_count` | `features/settings/VoteHistory.svelte` |
 | `rankings_view_changed` | A rankings filter pill | `competition`, `view`, `previous_view` (`all` / `designers` / `others` / `disagree`) | `ResultsView.svelte` |
 | `poster_details_opened` | A poster clicked in the rankings, opening the modal (a modifier-click opens its page in a new tab instead) | `competition`, `poster_id`, `poster_title`, `poster_rank`, `view`, `placement`: `podium` / `leaderboard` / `local_picks` / `disagreements` | `ResultsView.svelte` |
-| `nav_link_clicked` | The logo, the header shortcut, a menu link, or "See rankings" on the vote screen's messages | `destination`: `vote` / `rankings` / `about` / `settings` / `past_results`, `placement`: `logo` / `header_pill` / `menu` / `vote_message`, `competition` (for past results) | `SiteHeader.svelte`, `NavPill.svelte`, `SiteMenu.svelte`, `VoteStage.svelte` |
+| `nav_link_clicked` | The logo, the header shortcut, a menu link, "See rankings" on the vote screen's messages, or a button on the 404 or error page | `destination`: `vote` / `rankings` / `about` / `settings` / `past_results`, `placement`: `logo` / `header_pill` / `menu` / `vote_message` / `error_page`, `competition` (for past results) | `SiteHeader.svelte`, `NavPill.svelte`, `SiteMenu.svelte`, `VoteStage.svelte`, `routes/+error.svelte` |
 
 ### Adding an event
 
@@ -74,3 +74,19 @@ Nothing is stored on the device: `disable_persistence` keeps the visitor's id ou
 3. Call `track()` next to the action: in the component or page glue, after it succeeds (e.g. after the Convex mutation resolves). Don't call it from the state classes (`i18n`, `designer`, `sound`), which `analytics.ts` imports.
 4. Add a row to the table above.
 5. Check the `[analytics]` line in the console under `pnpm dev`, then in Mixpanel's Live View after deploying.
+
+### Sources (UTM tags)
+
+Links we hand out carry UTM parameters saying where they were handed out. Mixpanel adds the landing page's `utm_*` to every event of that visit (the SDK's `store_google` default), so any event can be broken down by `utm_source` or `utm_medium`. Untagged visits show as direct, or by `$referring_domain` when there's a referrer. QR scans and most chat apps send none, which is why we tag.
+
+| Where | `utm_source` | `utm_medium` | `utm_content` |
+|---|---|---|---|
+| QR codes (e.g. at Alisa's design school) | the place, e.g. the school | `qr` | each code's spot, e.g. `entrance` |
+| Posts in design communities | the community, e.g. `telegram_<group>` | `community` | |
+| The site's share buttons (added automatically) | `site_button` / `poster_button` | `share` | |
+
+- `utm_campaign` is optional, e.g. a competition's slug.
+- Values are lowercase snake_case. Never change one once its link is out, and keep a list of the links handed out.
+- Make links and QR codes (PNG or SVG) on `/admin/share`. It's hidden: nothing links to it, it asks search engines to skip it, its page views aren't tracked, and it has no sign-in.
+- `withUtm()` and `SITE` are in `src/lib/features/share/links.ts`; the share buttons use them too.
+- The SDK marks `store_google` as deprecated. If an update stops it adding the tags to every event (they'd only be on page views), register `utm_*` from the landing URL as super properties in `analytics.ts`.

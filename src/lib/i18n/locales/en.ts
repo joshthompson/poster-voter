@@ -163,6 +163,16 @@ export const en = {
     }
   },
 
+  // The page for a link that goes nowhere (404) or a page that broke.
+  error: {
+    notFoundTitle: 'Nothing on this wall',
+    notFoundBody: 'This page has been torn down, or it was never put up. There are plenty of other posters to look at.',
+    title: 'Something went wrong',
+    body: 'This page didn’t load. Try again in a moment.',
+    vote: 'Go vote',
+    rankings: 'See the rankings'
+  },
+
   results: {
     title: 'Rankings',
     // The big two-word heading.

@@ -3,12 +3,13 @@
   import CornerButton from '$lib/components/layout/CornerButton.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
   import { track } from '$lib/services/analytics';
+  import { SITE, withUtm } from './links';
   import { LinkSharer } from './share.svelte';
 
   // Shares the site itself from the bottom-right corner, mirroring the coffee button on the left.
-  // Always the live site's address, wherever this is running.
+  // Always the live site's address, wherever this is running, tagged as shared from here.
 
-  const SITE = 'https://postervote.com';
+  const url = withUtm(SITE, { source: 'site_button', medium: 'share' });
 
   const sharer = new LinkSharer();
   let sharing = false;
@@ -19,7 +20,7 @@
     if (sharing) return;
     sharing = true;
     try {
-      track('site_shared', { outcome: await sharer.share(SITE, i18n.t.brand) });
+      track('site_shared', { outcome: await sharer.share(url, i18n.t.brand) });
     } finally {
       sharing = false;
     }

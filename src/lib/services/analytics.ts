@@ -76,7 +76,7 @@ export type Events = {
   };
   nav_link_clicked: {
     destination: NavDestination;
-    placement: 'logo' | 'header_pill' | 'menu' | 'vote_message';
+    placement: 'logo' | 'header_pill' | 'menu' | 'vote_message' | 'error_page';
     /** For a past competition's results. */
     competition?: string;
   };

@@ -157,6 +157,15 @@ export const sv: Messages = {
     }
   },
 
+  error: {
+    notFoundTitle: 'Ingenting på den här väggen',
+    notFoundBody: 'Sidan har rivits ner, eller så sattes den aldrig upp. Det finns gott om andra affischer att titta på.',
+    title: 'Något gick fel',
+    body: 'Sidan kunde inte laddas. Försök igen om en stund.',
+    vote: 'Rösta',
+    rankings: 'Se topplistan'
+  },
+
   results: {
     title: 'Topplista',
     heading: ['Hela', 'topplistan'],

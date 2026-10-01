@@ -3,11 +3,12 @@
   import IconButton from '$lib/components/ui/IconButton.svelte';
   import Pill from '$lib/components/ui/Pill.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
+  import { withUtm } from './links';
   import { LinkSharer, type ShareOutcome } from './share.svelte';
 
   // Shares a poster's page (`href`, as posterHref gives it) through the device's share menu, or
-  // copies the link where there isn't one. A round icon button, or with `labelled` a pill that
-  // says "Share". `onshare` hears how each share ended.
+  // copies the link where there isn't one, tagged as shared from a poster (see links.ts). A round
+  // icon button, or with `labelled` a pill that says "Share". `onshare` hears how each share ended.
 
   let {
     href,
@@ -28,7 +29,7 @@
 
   async function share() {
     if (sharing) return;
-    const url = new URL(href, location.href).href;
+    const url = withUtm(new URL(href, location.href).href, { source: 'poster_button', medium: 'share' });
     sharing = true;
     try {
       onshare?.(await sharer.share(url, title));

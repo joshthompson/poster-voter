@@ -17,10 +17,12 @@
   if (configured) setupConvex(PUBLIC_CONVEX_URL);
 
   // The first page and every navigation after it. Opening a poster from the rankings changes the
-  // URL without navigating, so it isn't one (it's `poster_details_opened`).
-  afterNavigate(({ to }) =>
-    trackPageview({ route: to?.route.id ?? undefined, competition: to?.params?.competition })
-  );
+  // URL without navigating, so it isn't one (it's `poster_details_opened`). Our own pages under
+  // /admin aren't counted: visitors never see them.
+  afterNavigate(({ to }) => {
+    if (to?.route.id?.startsWith('/admin')) return;
+    trackPageview({ route: to?.route.id ?? undefined, competition: to?.params?.competition });
+  });
 </script>
 
 <!-- Browsers only allow audio after a gesture, so the first click or key press starts it. -->
