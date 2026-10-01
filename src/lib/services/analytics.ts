@@ -56,7 +56,7 @@ export type Events = {
   coffee_link_clicked: { placement: 'corner_button' | 'about_page' };
   social_link_clicked: {
     person: 'alisa' | 'josh';
-    network: 'instagram' | 'substack' | 'telegram' | 'website';
+    network: 'instagram' | 'substack' | 'telegram' | 'youtube' | 'website';
     url: string;
   };
   /** The new language is `language`, sent with every event. */

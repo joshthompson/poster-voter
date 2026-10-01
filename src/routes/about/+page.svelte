@@ -8,6 +8,7 @@
   import substack from '$lib/assets/substack.png';
   import telegram from '$lib/assets/telegram.png';
   import www from '$lib/assets/www.png';
+  import youtube from '$lib/assets/youtube.png';
   import { i18n } from '$lib/i18n/index.svelte';
   import { track } from '$lib/services/analytics';
 
@@ -21,7 +22,8 @@
       links: [
         { name: 'Instagram', network: 'instagram', icon: instagram, url: 'https://www.instagram.com/totally_sspiess/' },
         { name: 'Substack', network: 'substack', icon: substack, url: 'https://substack.com/@alisavasileva' },
-        { name: 'Telegram', network: 'telegram', icon: telegram, url: 'https://t.me/alisalisaw' }
+        { name: 'Telegram', network: 'telegram', icon: telegram, url: 'https://t.me/alisalisaw' },
+        { name: 'YouTube', network: 'youtube', icon: youtube, url: 'https://www.youtube.com/@jus11ravel' }
       ]
     },
     {
