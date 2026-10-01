@@ -1,7 +1,7 @@
 <script lang="ts">
   import { headroom, widestWord } from './glyphs';
 
-  // Text set in the hand-drawn pixel letters (the Pixel Letters font, see ./glyphs). Characters
+  // Text set in the hand-drawn pixel letters (the Remi Pop font, see ./glyphs). Characters
   // without a letter (e.g. "&") fall back to the site font at the same size.
   // `px` is screen pixels per art pixel; keep it whole so the pixels stay sharp.
   // `color` colours the letters (any CSS colour, e.g. "white" or "var(--red)"); they're black

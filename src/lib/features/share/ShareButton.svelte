@@ -7,56 +7,38 @@
 
   // Shares a poster's page (`href`, as posterHref gives it) through the device's share menu, or
   // copies the link where there isn't one. A round icon button, or with `labelled` a pill that
-  // says "Share". `onhold` hears whether it's in use (the pointer is over it, or its share menu is
-  // open), so whatever's around it can wait. `onshare` hears how each share ended.
+  // says "Share". `onshare` hears how each share ended.
 
   let {
     href,
     title,
     labelled = false,
-    onhold,
     onshare
   }: {
     href: string;
     title: string;
     labelled?: boolean;
-    onhold?: (held: boolean) => void;
     onshare?: (outcome: ShareOutcome) => void;
   } = $props();
 
   const sharer = new LinkSharer();
-  let hovered = false;
   let sharing = false;
 
   const t = $derived(i18n.t.share);
 
-  /** Apply `change`, telling `onhold` if that starts or ends its use. */
-  function update(change: () => void) {
-    const was = hovered || sharing;
-    change();
-    if (hovered || sharing) {
-      if (!was) onhold?.(true);
-    } else if (was) onhold?.(false);
-  }
-
   async function share() {
     if (sharing) return;
     const url = new URL(href, location.href).href;
-    update(() => (sharing = true));
+    sharing = true;
     try {
       onshare?.(await sharer.share(url, title));
     } finally {
-      update(() => (sharing = false));
+      sharing = false;
     }
   }
 </script>
 
-<span
-  class="share"
-  role="presentation"
-  onpointerenter={() => update(() => (hovered = true))}
-  onpointerleave={() => update(() => (hovered = false))}
->
+<span class="share">
   {#if labelled}
     <Pill variant="red" onclick={share}>
       <span class="labelled"><img src={shareIcon} alt="" width="24" height="24" />{t.label}</span>

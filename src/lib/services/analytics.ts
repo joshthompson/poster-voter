@@ -49,7 +49,7 @@ export type Events = {
   };
   poster_vote_failed: AboutVote;
   pair_skipped: { competition?: string; poster_ids: string[]; poster_titles: string[]; votes_this_visit: number };
-  reveal_dismissed: { method: Method };
+  reveal_dismissed: { method: Method; is_autoplay_paused: boolean };
   all_posters_seen: { competition?: string; posters_total: number; votes_this_visit: number };
   poster_shared: AboutPoster & { placement: 'vote_reveal' | 'rankings_modal' | 'poster_page'; outcome: ShareOutcome };
   site_shared: { outcome: ShareOutcome };
@@ -63,6 +63,8 @@ export type Events = {
   language_changed: { previous_language: Lang };
   /** The new setting is `is_sound_muted`, sent with every event. */
   sound_toggled: Record<string, never>;
+  /** The new setting: whether the revealed votes wait for them. It lasts the visit. */
+  autoplay_toggled: { is_autoplay_paused: boolean };
   vote_history_cleared: { vote_count?: number };
   rankings_view_changed: { competition?: string; view: View; previous_view: View };
   poster_details_opened: AboutPoster & {

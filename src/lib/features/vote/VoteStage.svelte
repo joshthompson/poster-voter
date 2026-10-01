@@ -20,9 +20,10 @@
   import { i18n } from '$lib/i18n/index.svelte';
   import PosterCard from './PosterCard.svelte';
   import ProgressBar from './ProgressBar.svelte';
+  import RevealButtons from './RevealButtons.svelte';
   import VerdictBubble from './VerdictBubble.svelte';
   import VsBadge from './VsBadge.svelte';
-  import { VoteSession } from './session.svelte';
+  import { REVEAL_MS, VoteSession } from './session.svelte';
   import { verdictFor } from './verdict';
   import type { Poster } from './types';
 
@@ -121,8 +122,14 @@
 
   /** Move on from the revealed votes before it does so by itself. */
   function next(method: 'click' | 'keyboard') {
-    track('reveal_dismissed', { method });
+    track('reveal_dismissed', { method, is_autoplay_paused: session.paused });
     session.advance();
+  }
+
+  function toggleAutoplay() {
+    if (session.paused) session.resume();
+    else session.pause();
+    track('autoplay_toggled', { is_autoplay_paused: session.paused });
   }
 
   const toRankings = () => track('nav_link_clicked', { destination: 'rankings', placement: 'vote_message' });
@@ -204,7 +211,6 @@
             pct={session.result?.pct[i]}
             winner={session.result ? session.result.pct[i] >= session.result.pct[1 - i] : false}
             shareHref={shareHref(poster)}
-            onhold={(held) => session.hold(poster._id, held)}
             onshare={(outcome) => track('poster_shared', { ...about(poster), placement: 'vote_reveal', outcome })}
             onclick={() => vote(i, 'click')}
           />
@@ -215,12 +221,17 @@
 
     <div class="footer">
       <div class="action">
-        <!-- An unseen button keeps this a button tall, so the bar below stays put as they come and go. -->
-        <span class="sizer" aria-hidden="true" inert><Pill>{t.skip}</Pill></span>
         {#if session.phase === 'choose'}
           <span class="appear"><Pill onclick={skip}>{t.skip}</Pill></span>
         {:else if session.revealed}
-          <span class="appear"><Pill variant="red" onclick={() => next('click')}>{t.next}</Pill></span>
+          <span class="appear">
+            <RevealButtons
+              paused={session.paused}
+              duration={REVEAL_MS}
+              ontoggle={toggleAutoplay}
+              onnext={() => next('click')}
+            />
+          </span>
         {/if}
       </div>
       {#if session.progress}
@@ -271,6 +282,9 @@
   }
 
   .footer {
+    /* The height of the buttons under the revealed votes, which the row they're in keeps as the
+       buttons come and go, so the bar below stays put. */
+    --next-height: 52px;
     align-self: start;
     min-height: 48px;
     padding-top: clamp(12px, 2.5dvh, 32px);
@@ -279,15 +293,15 @@
     align-items: center;
     gap: 10px;
   }
+  @media (max-width: 560px) {
+    .footer {
+      --next-height: 44px;
+    }
+  }
   .action {
     display: grid;
-    justify-items: center;
-  }
-  .action > * {
-    grid-area: 1 / 1;
-  }
-  .sizer {
-    visibility: hidden;
+    place-items: center;
+    min-height: var(--next-height);
   }
   .appear {
     display: inline-block;

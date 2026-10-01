@@ -58,11 +58,11 @@ Titles default to the filename (`001.jpg` becomes "No. 1"). To set your own, add
 
 ## Pixel letters
 
-The hand-drawn lettering is a web font, Pixel Letters, built from one PNG per character in `src/lib/assets/chars/<set>/` (`latin`, `cyrillic`, `numbers`, `punctuation`). Dark, opaque pixels are ink; transparent or light ones are background. Each letter stands on the bottom edge of its image, and the image's width sets the letter's width.
+The hand-drawn lettering is a web font, Remi Pop, built from one PNG per character in `src/lib/assets/chars/<set>/` (`latin`, `cyrillic`, `numbers`, `punctuation`). Dark, opaque pixels are ink; transparent or light ones are background. Each letter stands on the bottom edge of its image, and the image's width sets the letter's width.
 
 To add or change a letter, save its PNG named after the character (`ж.png`, `7.png`), then run `pnpm font`. A lowercase drawing also covers the capital. Characters that can't go in a filename use a name instead, such as `question.png` for `?` (see `NAMED` in `scripts/build-font.mjs`).
 
-The script writes `src/lib/assets/fonts/pixel-letters.woff2` and `pixel-letters.json` (each letter's width and height, which `PixelText` uses for layout). Commit them with the drawings. `pnpm build` and the deploy workflow rebuild them too, so a drawing committed without running `pnpm font` still ships. The same drawings always produce the same files, so rebuilding doesn't create a diff.
+The script writes `src/lib/assets/fonts/remi-pop.woff2`, `remi-pop.ttf` (the same font, to install on a computer, e.g. for Figma; the site uses the woff2) and `remi-pop.json` (each letter's width and height, which `PixelText` uses for layout). Commit them with the drawings. `pnpm build` and the deploy workflow rebuild them too, so a drawing committed without running `pnpm font` still ships. The same drawings always produce the same files, so rebuilding doesn't create a diff.
 
 Use the lettering through `PixelText` (or `Logo` for the drifting header logo). Characters without a drawing fall back to the site font.
 

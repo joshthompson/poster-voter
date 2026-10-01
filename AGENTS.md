@@ -52,7 +52,7 @@ Nothing is stored on the device: `disable_persistence` keeps the visitor's id ou
 | `poster_voted` | A vote is saved in Convex | `competition`, `poster_id`, `poster_title`, `opponent_poster_id`, `opponent_poster_title`, `chosen_side` (`left` / `right`; top/bottom when stacked), `method`, `crowd_share` (0–100: how much of the pair's vote agrees), `pair_votes`, `crowd_streak`, `votes_this_visit`, `posters_seen` and `posters_total` (until they've seen every poster) | `VoteStage.svelte` |
 | `poster_vote_failed` | Saving a vote fails | as `poster_voted`, up to `method` | `VoteStage.svelte` |
 | `pair_skipped` | The skip button | `competition`, `poster_ids`, `poster_titles` (lists, in screen order), `votes_this_visit` | `VoteStage.svelte` |
-| `reveal_dismissed` | The next button, or Enter or Space, during the vote reveal (not the automatic advance) | `method` | `VoteStage.svelte` |
+| `reveal_dismissed` | "Next →", or Enter or Space, during the vote reveal (not the automatic advance) | `method`, `is_autoplay_paused` | `VoteStage.svelte` |
 | `all_posters_seen` | The "you've seen every poster" message appears | `competition`, `posters_total`, `votes_this_visit` | `VoteStage.svelte` |
 | `poster_shared` | A poster share finishes | `competition`, `poster_id`, `poster_title`, `placement`: `vote_reveal` / `rankings_modal` / `poster_page`, `outcome` | `VoteStage.svelte`, `features/results/ResultsView.svelte`, `features/results/PosterView.svelte` |
 | `site_shared` | The corner share button finishes | `outcome` | `features/share/SiteShareButton.svelte` |
@@ -60,6 +60,7 @@ Nothing is stored on the device: `disable_persistence` keeps the visitor's id ou
 | `social_link_clicked` | A profile link under a maker's name | `person`: `alisa` / `josh`, `network`: `instagram` / `substack` / `telegram` / `youtube` / `website`, `url` | `routes/about/+page.svelte` |
 | `language_changed` | A different language picked (the new one is `language`) | `previous_language` | `features/settings/LanguagePicker.svelte` |
 | `sound_toggled` | The mute button (the new setting is `is_sound_muted`) | none | `components/layout/MuteButton.svelte` |
+| `autoplay_toggled` | The ▶ / ❚❚ button beside "Next →" under the vote reveal, whose border counts down to the next pair | `is_autoplay_paused` (the new setting; it lasts the visit) | `VoteStage.svelte` |
 | `vote_history_cleared` | "Clear" in Settings, once confirmed (sent by beacon, since the page reloads) | `vote_count` | `features/settings/VoteHistory.svelte` |
 | `rankings_view_changed` | A rankings filter pill | `competition`, `view`, `previous_view` (`all` / `designers` / `others` / `disagree`) | `ResultsView.svelte` |
 | `poster_details_opened` | A poster clicked in the rankings, opening the modal (a modifier-click opens its page in a new tab instead) | `competition`, `poster_id`, `poster_title`, `poster_rank`, `view`, `placement`: `podium` / `leaderboard` / `local_picks` / `disagreements` | `ResultsView.svelte` |

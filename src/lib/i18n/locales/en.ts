@@ -62,7 +62,9 @@ export const en = {
     yourPick: 'your pick',
     ofVoters: 'of voters',
     skip: 'Can’t decide? Skip →',
-    next: 'Next pair →',
+    next: 'Next →',
+    pauseAutoplay: 'Pause autoplay',
+    resumeAutoplay: 'Resume autoplay',
     error: 'That vote got lost in the dots. Try the next pair!',
     // A few wordings of each, one picked per pair (see verdict.ts).
     verdict: {

@@ -22,7 +22,6 @@
     pct,
     winner,
     shareHref,
-    onhold,
     onshare,
     onclick
   }: {
@@ -38,8 +37,6 @@
     winner?: boolean;
     /** Its page, to share once the votes are revealed. */
     shareHref?: string;
-    /** Whether its share button is in use (see ShareButton). */
-    onhold?: (held: boolean) => void;
     /** How each share of its page ended. */
     onshare?: (outcome: ShareOutcome) => void;
     onclick: () => void;
@@ -68,8 +65,8 @@
       />
       {#if shareHref}
         <!-- Under the title, or in the corner on narrow screens, which hide titles (see below). -->
-        <div class="share below"><ShareButton href={shareHref} title={poster.title} labelled {onhold} {onshare} /></div>
-        <div class="share corner"><ShareButton href={shareHref} title={poster.title} {onhold} {onshare} /></div>
+        <div class="share below"><ShareButton href={shareHref} title={poster.title} labelled {onshare} /></div>
+        <div class="share corner"><ShareButton href={shareHref} title={poster.title} {onshare} /></div>
       {/if}
     {/if}
   </div>
@@ -190,7 +187,16 @@
     background: #f3ebe2;
   }
 
-  .vote:not(:disabled):hover .frame,
+  /* Only where there's a real hover. A touch screen keeps the last tapped poster "hovered", so
+     a tap that didn't vote (e.g. before voting opened) would look like a vote in progress. */
+  @media (hover: hover) {
+    .vote:not(:disabled):hover .frame {
+      transform: scale(1.045) rotate(calc(var(--rot) * -1));
+      box-shadow:
+        0 0 0 5px var(--red),
+        0 30px 70px -14px rgba(255, 59, 92, 0.55);
+    }
+  }
   .vote:not(:disabled):focus-visible .frame {
     transform: scale(1.045) rotate(calc(var(--rot) * -1));
     box-shadow:

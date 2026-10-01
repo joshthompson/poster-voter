@@ -6,8 +6,14 @@ import type { Phase, Poster, VoteResult } from './types';
 // One visitor's run through the pairs: which pair is up, and the enter → choose → reveal → exit
 // cycle around each vote. Knows nothing about Convex; the page passes in its data and a way to vote.
 
-const ENTER_MS = 1100;
-const REVEAL_MS = 3000;
+/**
+ * How long a new pair takes before it can be voted on: until both cards have flown in to full
+ * size (see PosterCard's fly-in), though they're still settling. Any longer and taps on posters
+ * that look ready are lost.
+ */
+const ENTER_MS = 400;
+/** How long the revealed votes stay on screen before the next pair, unless paused. */
+export const REVEAL_MS = 4000;
 const EXIT_MS = 700;
 
 type Source = {
@@ -44,13 +50,19 @@ export class VoteSession {
    * out of how many there are. Null once they'd been shown them all before this pair.
    */
   progress = $state<{ seen: number; total: number } | null>(null);
+  /**
+   * Whether they've stopped the reveal moving on by itself, so it waits for them. Lasts the visit,
+   * across pairs, until they resume.
+   */
+  paused = $state(false);
 
   #source: Source;
   #progress = createProgress();
   #shown: Next | null = null;
   #revealTimer: ReturnType<typeof setTimeout> | undefined;
-  /** What's keeping the reveal on screen (see `hold`). */
-  #holds = new Set<string>();
+  /** How much of REVEAL_MS the reveal has left, as of `#since`. It doesn't count down while paused. */
+  #left = REVEAL_MS;
+  #since = 0;
   #showing = false;
 
   constructor(source: Source) {
@@ -102,23 +114,35 @@ export class VoteSession {
       this.error = true;
       console.error(e);
     }
+    this.#left = REVEAL_MS;
     this.#autoAdvance();
   }
 
-  /**
-   * Keep the reveal on screen while `by` needs it (e.g. the pointer is over a share button)
-   * instead of moving on by itself. Once nothing holds it, it moves on REVEAL_MS later.
-   */
-  hold(by: string, held: boolean) {
-    if (held) this.#holds.add(by);
-    else this.#holds.delete(by);
+  /** Stop the reveal moving on by itself, for this pair and the ones after, until `resume`. */
+  pause() {
+    this.paused = true;
+    if (this.#revealTimer === undefined) return;
+    this.#stopTimer();
+    this.#left -= performance.now() - this.#since;
+  }
+
+  /** Let the reveal move on by itself again, once it's had the time it had left. */
+  resume() {
+    this.paused = false;
     this.#autoAdvance();
   }
 
-  /** Move on REVEAL_MS from now, if the reveal is showing and nothing holds it. */
+  /** Move on once the reveal has had its time on screen, if it's showing and not paused. */
   #autoAdvance() {
+    this.#stopTimer();
+    if (!this.revealed || this.paused) return;
+    this.#since = performance.now();
+    this.#revealTimer = setTimeout(() => this.advance(), this.#left);
+  }
+
+  #stopTimer() {
     clearTimeout(this.#revealTimer);
-    if (this.revealed && !this.#holds.size) this.#revealTimer = setTimeout(() => this.advance(), REVEAL_MS);
+    this.#revealTimer = undefined;
   }
 
   skip() {
@@ -126,7 +150,7 @@ export class VoteSession {
   }
 
   async advance() {
-    clearTimeout(this.#revealTimer);
+    this.#stopTimer();
     this.phase = 'exit';
     this.#count();
     // Voted or skipped, this pair is done with: carry on after it, this visit or the next.
@@ -191,7 +215,6 @@ export class VoteSession {
     this.#showing = false;
 
     this.#shown = next;
-    this.#holds.clear();
     this.pair = next.pair;
     this.chosen = null;
     this.result = null;

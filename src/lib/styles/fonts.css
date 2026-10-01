@@ -1,8 +1,8 @@
 /* The hand-drawn pixel letters, built from lib/assets/chars by `pnpm font`. One em is 32 art px.
    Every weight maps to the one face, so the browser never fakes a bold by smearing the pixels. */
 @font-face {
-  font-family: 'Pixel Letters';
-  src: url('../assets/fonts/pixel-letters.woff2') format('woff2');
+  font-family: 'Remi Pop';
+  src: url('../assets/fonts/remi-pop.woff2') format('woff2');
   font-weight: 100 900;
   font-display: block;
 }

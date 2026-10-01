@@ -61,7 +61,9 @@ export const sv: Messages = {
     yourPick: 'ditt val',
     ofVoters: 'av rösterna',
     skip: 'Kan inte välja? Hoppa över →',
-    next: 'Nästa par →',
+    next: 'Nästa →',
+    pauseAutoplay: 'Pausa automatisk uppspelning',
+    resumeAutoplay: 'Återuppta automatisk uppspelning',
     error: 'Rösten försvann bland prickarna. Prova nästa par!',
     verdict: {
       tie: [

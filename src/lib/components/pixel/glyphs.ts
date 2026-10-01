@@ -1,9 +1,9 @@
-// The hand-drawn pixel letters are the Pixel Letters font (lib/assets/fonts, declared in
+// The hand-drawn pixel letters are the Remi Pop font (lib/assets/fonts, declared in
 // lib/styles/fonts.css), which `pnpm font` builds from the drawings in lib/assets/chars.
 // One em is 32 art px: a line of text, with every letter standing on its bottom edge.
 // These are the letters' sizes, for layout that has to know them before the text is drawn.
 
-import data from '$lib/assets/fonts/pixel-letters.json';
+import data from '$lib/assets/fonts/remi-pop.json';
 
 type Metrics = { advance: number; height: number };
 const metrics: Record<string, Metrics> = data;
