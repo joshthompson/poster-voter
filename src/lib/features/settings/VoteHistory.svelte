@@ -4,6 +4,7 @@
   import { api } from '$convex/api';
   import Button from '$lib/components/ui/Button.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
+  import { track } from '$lib/services/analytics';
   import { storage } from '$lib/services/storage';
   import { voterId } from '$lib/services/voter';
 
@@ -14,6 +15,8 @@
 
   function clear() {
     if (!confirm(t.clearConfirm)) return;
+    // By beacon, since the page reloads straight after.
+    track('vote_history_cleared', { vote_count: votes.data }, { beacon: true });
     storage.clear();
     // A full reload so every page starts from the cleared state (and asks the designer question again).
     location.href = resolve('/');

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { useConvexClient } from 'convex-svelte';
+  import { untrack } from 'svelte';
   import { resolve } from '$app/paths';
   import { api } from '$convex/api';
   import Button from '$lib/components/ui/Button.svelte';
@@ -11,6 +12,7 @@
   import DesignerChoice from '$lib/features/designer/DesignerChoice.svelte';
   import { posterHref, posterNames } from '$lib/features/results/links';
   import { designer } from '$lib/state/designer.svelte';
+  import { track } from '$lib/services/analytics';
   import { sound } from '$lib/services/sound.svelte';
   import { location } from '$lib/services/location';
   import { usePosters } from '$lib/services/posters.svelte';
@@ -35,6 +37,9 @@
   // Each poster's page, to share after voting on it.
   const names = $derived(posterNames(list));
   const shareHref = (p: Poster) => (posters.slug ? posterHref(posters.slug, names.get(p._id)!) : undefined);
+  // The competition and a poster, as the analytics events name them.
+  const competition = $derived(posters.slug ?? undefined);
+  const about = (p: Poster) => ({ competition, poster_id: p._id, poster_title: p.title });
 
   const session = new VoteSession({
     posters: () => list,
@@ -52,31 +57,85 @@
 
   // Skip the start button if the music is already going, e.g. arriving via "Keep voting".
   let started = $state(sound.unlocked);
+  // Votes cast this visit, for the analytics events.
+  let votes = 0;
 
   $effect(() => {
     if (started) session.refresh();
   });
 
-  function start() {
+  // This pair showed them the last of the posters they hadn't seen.
+  $effect(() => {
+    if (session.phase === 'seenAll') {
+      untrack(() => track('all_posters_seen', { competition, posters_total: list.length, votes_this_visit: votes }));
+    }
+  });
+
+  function start(trigger: 'start_button' | 'designer_answer') {
     sound.unlock();
     started = true;
+    track('voting_started', { trigger });
   }
 
-  function vote(i: number) {
+  function answer() {
+    track('designer_question_answered', { placement: 'vote_intro' });
+    start('designer_answer');
+  }
+
+  async function vote(i: number, method: 'click' | 'keyboard') {
     if (!session.canVote) return;
     sound.vote();
-    session.vote(i);
+    const [pick, other] = [session.pair![i], session.pair![1 - i]];
+    await session.vote(i);
+
+    const props = {
+      ...about(pick),
+      opponent_poster_id: other._id,
+      opponent_poster_title: other.title,
+      chosen_side: i === 0 ? 'left' : 'right',
+      method
+    } as const;
+    if (!session.result) return track('poster_vote_failed', props);
+    track('poster_voted', {
+      ...props,
+      crowd_share: session.result.pct[i],
+      pair_votes: session.result.total,
+      crowd_streak: session.streak,
+      votes_this_visit: ++votes,
+      posters_seen: session.progress?.seen,
+      posters_total: session.progress?.total
+    });
   }
+
+  function skip() {
+    if (session.phase !== 'choose' || !session.pair) return;
+    const pair = session.pair;
+    track('pair_skipped', {
+      competition,
+      poster_ids: pair.map((p) => p._id),
+      poster_titles: pair.map((p) => p.title),
+      votes_this_visit: votes
+    });
+    session.skip();
+  }
+
+  /** Move on from the revealed votes before it does so by itself. */
+  function next(method: 'click' | 'keyboard') {
+    track('reveal_dismissed', { method });
+    session.advance();
+  }
+
+  const toRankings = () => track('nav_link_clicked', { destination: 'rankings', placement: 'vote_message' });
 
   function onKey(e: KeyboardEvent) {
     if (session.canVote) {
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') vote(0);
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') vote(1);
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') vote(0, 'keyboard');
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') vote(1, 'keyboard');
     } else if (session.revealed && session.result && (e.key === 'Enter' || e.key === ' ')) {
       // A focused button, such as share, handles those keys itself.
       if (e.target instanceof HTMLButtonElement && !e.target.disabled) return;
       e.preventDefault();
-      session.advance();
+      next('keyboard');
     }
   }
 
@@ -102,23 +161,23 @@
   {:else if designer.value === null}
     <div class="intro">
       <h2 class="question"><PixelText text={i18n.t.designerQuestion} /></h2>
-      <DesignerChoice staggered onchoose={start} />
+      <DesignerChoice staggered onchoose={answer} />
     </div>
   {:else if !started}
     <div class="intro">
-      <span class="wobbly"><Button label={t.start} onclick={start} /></span>
+      <span class="wobbly"><Button label={t.start} onclick={() => start('start_button')} /></span>
     </div>
   {:else if session.phase === 'done'}
     <MessageCard title={t.doneTitle}>
       <p>{t.doneBody(session.totalPairs)}</p>
-      <Pill variant="red" href={resolve('/results')}>{t.seeRankings}</Pill>
+      <Pill variant="red" href={resolve('/results')} onclick={toRankings}>{t.seeRankings}</Pill>
     </MessageCard>
   {:else if session.phase === 'seenAll'}
     <MessageCard title={t.seenAllTitle}>
       <p>{t.seenAllBody}</p>
       <ButtonRow>
         <Pill variant="red" onclick={() => session.carryOn()}>{t.continueVoting}</Pill>
-        <Pill href={resolve('/results')}>{t.seeRankings}</Pill>
+        <Pill href={resolve('/results')} onclick={toRankings}>{t.seeRankings}</Pill>
       </ButtonRow>
     </MessageCard>
   {:else if !session.pair}
@@ -138,7 +197,8 @@
             winner={session.result ? session.result.pct[i] >= session.result.pct[1 - i] : false}
             shareHref={shareHref(poster)}
             onhold={(held) => session.hold(poster._id, held)}
-            onclick={() => vote(i)}
+            onshare={(outcome) => track('poster_shared', { ...about(poster), placement: 'vote_reveal', outcome })}
+            onclick={() => vote(i, 'click')}
           />
           {#if i === 0}<VsBadge hidden={showingResult} />{/if}
         {/each}
@@ -150,9 +210,9 @@
         <!-- An unseen button keeps this a button tall, so the bar below stays put as they come and go. -->
         <span class="sizer" aria-hidden="true" inert><Pill>{t.skip}</Pill></span>
         {#if session.phase === 'choose'}
-          <span class="appear"><Pill onclick={() => session.skip()}>{t.skip}</Pill></span>
+          <span class="appear"><Pill onclick={skip}>{t.skip}</Pill></span>
         {:else if session.revealed}
-          <span class="appear"><Pill variant="red" onclick={() => session.advance()}>{t.next}</Pill></span>
+          <span class="appear"><Pill variant="red" onclick={() => next('click')}>{t.next}</Pill></span>
         {/if}
       </div>
       {#if session.progress}

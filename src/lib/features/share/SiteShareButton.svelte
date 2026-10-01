@@ -2,6 +2,7 @@
   import shareIcon from '$lib/assets/share-site.png';
   import CornerButton from '$lib/components/layout/CornerButton.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
+  import { track } from '$lib/services/analytics';
   import { LinkSharer } from './share.svelte';
 
   // Shares the site itself from the bottom-right corner, mirroring the coffee button on the left.
@@ -18,7 +19,7 @@
     if (sharing) return;
     sharing = true;
     try {
-      await sharer.share(SITE, i18n.t.brand);
+      track('site_shared', { outcome: await sharer.share(SITE, i18n.t.brand) });
     } finally {
       sharing = false;
     }

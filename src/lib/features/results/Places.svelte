@@ -74,7 +74,7 @@
       <ul class="picks" bind:this={track} onscroll={edges}>
         {#each places.localPicks as pick, i (`${pick.country}|${pick.city}`)}
           <li style="--i:{i}; --tilt:{TILTS[i % TILTS.length]}deg">
-            <a class="pick" {...linkTo(pick.poster)}>
+            <a class="pick" {...linkTo(pick.poster, 'local_picks')}>
               <span class="where">
                 <span class="flag" aria-hidden="true">{flag(pick.country)}</span>
                 <span class="city">{pick.city}</span>

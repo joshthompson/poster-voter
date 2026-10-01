@@ -4,7 +4,8 @@
 
   // A small outlined square that sways in a bottom corner of the screen, holding an icon and
   // named by a tooltip towards the middle on hover. A link (opening in a new tab) when given
-  // `href`, otherwise a button. `background` fills the square behind the icon.
+  // `href`, otherwise a button; either way `onclick` hears clicks on it. `background` fills the
+  // square behind the icon.
 
   let {
     corner,
@@ -30,7 +31,7 @@
 <div class="floating {corner}">
   <Tooltip text={label} side={corner === 'left' ? 'right' : 'left'}>
     {#if href}
-      <a class="corner" {href} target="_blank" rel="noopener" aria-label={label}>{@render square()}</a>
+      <a class="corner" {href} target="_blank" rel="noopener" aria-label={label} {onclick}>{@render square()}</a>
     {:else}
       <button class="corner" {onclick} aria-label={label}>{@render square()}</button>
     {/if}

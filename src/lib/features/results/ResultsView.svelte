@@ -6,6 +6,7 @@
   import { api } from '$convex/api';
   import Loader from '$lib/components/ui/Loader.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
+  import { track } from '$lib/services/analytics';
   import { usePosters } from '$lib/services/posters.svelte';
   import { visibility } from '$lib/state/visibility.svelte';
   import Disagreements from './Disagreements.svelte';
@@ -20,7 +21,8 @@
   import ViewFilters from './ViewFilters.svelte';
   import { disagreements, overview } from './hydrate';
   import { plainClick, posterHref, posterNames } from './links';
-  import type { LinkTo, View } from './types';
+  import type { ShareOutcome } from '$lib/features/share/share.svelte';
+  import type { LinkTo, RankedPoster, View } from './types';
 
   // A competition's results: the active one, or the one named by `slug` (usually archived).
   // Each view reads its segment's snapshot (rebuilt at most every 15 minutes as votes come in), the
@@ -77,23 +79,41 @@
   // the page's URL in the address bar to share, and Back closes it (shallow routing). Only
   // shown once the competition has loaded, since the URL names it.
   const names = $derived(posterNames(posters));
-  const linkTo: LinkTo = (p) => {
-    const href = posterHref(competition!.slug, names.get(p._id)!);
+  const hrefFor = (p: { _id: RankedPoster['_id'] }) => posterHref(competition!.slug, names.get(p._id)!);
+  const linkTo: LinkTo = (p, placement) => {
+    const href = hrefFor(p);
     return {
       href,
       onclick: (e) => {
         if (!plainClick(e)) return;
         e.preventDefault();
         pushState(href, { poster: p._id });
+        track('poster_details_opened', {
+          competition: competition!.slug,
+          poster_id: p._id,
+          poster_title: posterById.get(p._id)!.title,
+          poster_rank: data?.posters.find((r) => r._id === p._id)?.rank,
+          view,
+          placement
+        });
       }
     };
   };
 
   // The poster open in the modal, looked up in the live list so its numbers keep updating.
   const openPoster = $derived(data?.posters.find((p) => p._id === page.state.poster) ?? null);
-  const openHref = $derived(openPoster && competition ? linkTo(openPoster).href : undefined);
+  const openHref = $derived(openPoster && competition ? hrefFor(openPoster) : undefined);
   // Closing it goes back to the rankings' URL; after Back, it's already there.
   const onclose = () => page.state.poster && history.back();
+  const onshare = (outcome: ShareOutcome) =>
+    openPoster &&
+    track('poster_shared', {
+      competition: competition?.slug,
+      poster_id: openPoster._id,
+      poster_title: openPoster.title,
+      placement: 'rankings_modal',
+      outcome
+    });
 
   const sub = $derived.by(() => {
     if (missing) return slug ? t.noCompetitionHere : t.noCompetition;
@@ -129,7 +149,11 @@
 {#if missing}
   <Note><a href={resolve('/results')}>{t.seeCurrent}</a>.</Note>
 {:else}
-  <ViewFilters bind:value={view} />
+  <ViewFilters
+    bind:value={view}
+    onchange={(v, previous) =>
+      track('rankings_view_changed', { competition: competition?.slug, view: v, previous_view: previous })}
+  />
 
   {#if view === 'disagree'}
     {#if splitError}
@@ -168,7 +192,7 @@
   {/if}
 {/if}
 
-<PosterDetail poster={openPoster} {segment} {posterById} shareHref={openHref} {onclose} />
+<PosterDetail poster={openPoster} {segment} {posterById} shareHref={openHref} {onshare} {onclose} />
 
 <style>
   .loading {

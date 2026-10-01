@@ -15,7 +15,7 @@
 <section class="podium" aria-label={i18n.t.results.topThree}>
   {#each places as p (p._id)}
     <div class="place place-{p.rank}" style="--i:{p.rank}">
-      <a class="pick" {...linkTo(p)}>
+      <a class="pick" {...linkTo(p, 'podium')}>
         <div class="thumb">
           <img src={posterSrc(p.image)} alt="" />
           <span class="medal">{p.rank}</span>

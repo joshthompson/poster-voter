@@ -2,6 +2,7 @@
   import { resolve } from '$app/paths';
   import beta from '$lib/assets/beta.png';
   import Logo from '$lib/components/pixel/Logo.svelte';
+  import { track } from '$lib/services/analytics';
   import MuteButton from './MuteButton.svelte';
   import NavPill from './NavPill.svelte';
   import SiteMenu from './SiteMenu.svelte';
@@ -15,7 +16,11 @@
 
 <header>
   <div class="corner start"><MuteButton /></div>
-  <a class="brand" href={resolve('/')} aria-label="Poster Vote! (beta)"
+  <a
+    class="brand"
+    href={resolve('/')}
+    aria-label="Poster Vote! (beta)"
+    onclick={() => track('nav_link_clicked', { destination: 'vote', placement: 'logo' })}
     ><Logo /><img class="beta" src={beta} alt="" aria-hidden="true" draggable="false" /></a
   >
   <nav>

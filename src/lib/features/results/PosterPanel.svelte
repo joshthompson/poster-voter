@@ -6,6 +6,7 @@
   import Loader from '$lib/components/ui/Loader.svelte';
   import Meter from '$lib/components/ui/Meter.svelte';
   import ShareButton from '$lib/features/share/ShareButton.svelte';
+  import type { ShareOutcome } from '$lib/features/share/share.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
   import type { Segment } from '$lib/i18n/locales/en';
   import { posterSrc } from '$lib/utils/images';
@@ -16,14 +17,16 @@
 
   // A ranked poster in full: the big image, its numbers, how it does with designers and everyone
   // else, and its record against each poster it has met. The rankings' modal passes `onclose` for
-  // a close button and `shareHref` (the poster's page) for a share button in the corner. The
-  // poster's own page has neither: its title is the page's heading, with `links` under it.
+  // a close button and `shareHref` (the poster's page) for a share button in the corner, whose
+  // shares `onshare` hears. The poster's own page has neither: its title is the page's heading,
+  // with `links` under it.
 
   let {
     poster,
     segment,
     posterById,
     shareHref,
+    onshare,
     onclose,
     links
   }: {
@@ -32,6 +35,7 @@
     /** The competition's posters, to name the opponents. */
     posterById: Map<PosterInfo['_id'], PosterInfo>;
     shareHref?: string;
+    onshare?: (outcome: ShareOutcome) => void;
     onclose?: () => void;
     /** Shown under the title. */
     links?: Snippet;
@@ -57,7 +61,7 @@
 <div class="panel">
   {#if shareHref || onclose}
     <div class="actions">
-      {#if shareHref}<ShareButton href={shareHref} title={poster.title} />{/if}
+      {#if shareHref}<ShareButton href={shareHref} title={poster.title} {onshare} />{/if}
       {#if onclose}
         <IconButton label={t.detail.close} onclick={onclose}>
           <span class="x" aria-hidden="true">×</span>

@@ -107,13 +107,17 @@ Routes in `src/routes/` are thin: each page composes components from `src/lib/`.
 | `lib/components/pixel/`   | The hand-drawn pixel lettering (`PixelText`, `Logo`) and the letters' sizes         |
 | `lib/components/layout/`  | The site frame: header, menu, polka-dot background, page container                  |
 | `lib/features/<feature>/` | Everything for one part of the site (`vote`, `results`, `settings`, `designer`): its components, logic and types, side by side |
-| `lib/services/`           | Browser-facing services: `storage` (all localStorage access), voter id, sound       |
+| `lib/services/`           | Browser-facing services: `storage` (all localStorage access), voter id, sound, `analytics` (Mixpanel) |
 | `lib/state/`              | Shared app state, as rune classes                                                   |
 | `lib/i18n/`               | The current language, and one file of UI text per language in `locales/`            |
 | `lib/utils/`              | Small pure helpers                                                                  |
 | `lib/styles/`             | Global CSS: design tokens, element defaults, the `.legible` utility, shared keyframes |
 
 Import Convex's generated code through the `$convex` alias, e.g. `import { api } from '$convex/api'`, and the constants shared with the Convex functions through `$shared` (`convex/shared.ts`).
+
+## Analytics
+
+Usage is counted with Mixpanel, from the browser, through `src/lib/services/analytics.ts`. It stores nothing on the device (no cookie, no localStorage, not the voter id), so there's no consent banner, but every page load counts as a new anonymous visitor. Only the live site sends events; `pnpm dev` and `pnpm preview` log them to the console as `[analytics]`. The events, their properties and the conventions they follow are in [AGENTS.md](AGENTS.md#analytics--mixpanel).
 
 ## Deploying to GitHub Pages
 

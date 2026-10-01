@@ -3,18 +3,28 @@
   import { i18n } from '$lib/i18n/index.svelte';
   import type { View } from './types';
 
-  // Toggles between whose votes to show. The disagreements view lights up red.
+  // Toggles between whose votes to show. The disagreements view lights up red. `onchange` hears
+  // each switch to another view.
 
-  let { value = $bindable() }: { value: View } = $props();
+  let {
+    value = $bindable(),
+    onchange
+  }: { value: View; onchange?: (view: View, previous: View) => void } = $props();
 
   const VIEWS: View[] = ['all', 'designers', 'others', 'disagree'];
 
   const variant = (v: View) => (value !== v ? 'outline' : v === 'disagree' ? 'red' : 'ink');
+
+  function choose(v: View) {
+    if (v === value) return;
+    onchange?.(v, value);
+    value = v;
+  }
 </script>
 
 <nav class="filters" aria-label={i18n.t.results.viewsLabel}>
   {#each VIEWS as v}
-    <Pill variant={variant(v)} pressed={value === v} onclick={() => (value = v)}>
+    <Pill variant={variant(v)} pressed={value === v} onclick={() => choose(v)}>
       {i18n.t.results.views[v]}
     </Pill>
   {/each}

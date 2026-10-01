@@ -30,7 +30,7 @@
         value={t.gap(Math.round(Math.abs(p.gap) * 100))}
         caption={p.gap > 0 ? t.designersLove : t.designersNotSold}
         top={i < 3}
-        {...linkTo(p)}
+        {...linkTo(p, 'disagreements')}
       >
         <div class="versus">
           {#each groups as g}

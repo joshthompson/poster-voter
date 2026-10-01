@@ -37,7 +37,7 @@
         value={p.rating}
         caption="{p.wins}–{p.losses} · {p.matches ? pct(p.winRate) : '—'}"
         top={p.rank <= 3}
-        {...linkTo(p)}
+        {...linkTo(p, 'leaderboard')}
       >
         <Meter value={meter(p.rating)} />
       </RankRow>

@@ -3,19 +3,26 @@
   import IconButton from '$lib/components/ui/IconButton.svelte';
   import Pill from '$lib/components/ui/Pill.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
-  import { LinkSharer } from './share.svelte';
+  import { LinkSharer, type ShareOutcome } from './share.svelte';
 
   // Shares a poster's page (`href`, as posterHref gives it) through the device's share menu, or
   // copies the link where there isn't one. A round icon button, or with `labelled` a pill that
   // says "Share". `onhold` hears whether it's in use (the pointer is over it, or its share menu is
-  // open), so whatever's around it can wait.
+  // open), so whatever's around it can wait. `onshare` hears how each share ended.
 
   let {
     href,
     title,
     labelled = false,
-    onhold
-  }: { href: string; title: string; labelled?: boolean; onhold?: (held: boolean) => void } = $props();
+    onhold,
+    onshare
+  }: {
+    href: string;
+    title: string;
+    labelled?: boolean;
+    onhold?: (held: boolean) => void;
+    onshare?: (outcome: ShareOutcome) => void;
+  } = $props();
 
   const sharer = new LinkSharer();
   let hovered = false;
@@ -37,7 +44,7 @@
     const url = new URL(href, location.href).href;
     update(() => (sharing = true));
     try {
-      await sharer.share(url, title);
+      onshare?.(await sharer.share(url, title));
     } finally {
       update(() => (sharing = false));
     }

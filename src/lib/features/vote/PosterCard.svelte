@@ -1,5 +1,6 @@
 <script lang="ts">
   import ShareButton from '$lib/features/share/ShareButton.svelte';
+  import type { ShareOutcome } from '$lib/features/share/share.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
   import { posterSrc } from '$lib/utils/images';
   import ResultSticker from './ResultSticker.svelte';
@@ -22,6 +23,7 @@
     winner,
     shareHref,
     onhold,
+    onshare,
     onclick
   }: {
     poster: Poster;
@@ -38,6 +40,8 @@
     shareHref?: string;
     /** Whether its share button is in use (see ShareButton). */
     onhold?: (held: boolean) => void;
+    /** How each share of its page ended. */
+    onshare?: (outcome: ShareOutcome) => void;
     onclick: () => void;
   } = $props();
 </script>
@@ -64,8 +68,8 @@
       />
       {#if shareHref}
         <!-- Under the title, or in the corner on narrow screens, which hide titles (see below). -->
-        <div class="share below"><ShareButton href={shareHref} title={poster.title} labelled {onhold} /></div>
-        <div class="share corner"><ShareButton href={shareHref} title={poster.title} {onhold} /></div>
+        <div class="share below"><ShareButton href={shareHref} title={poster.title} labelled {onhold} {onshare} /></div>
+        <div class="share corner"><ShareButton href={shareHref} title={poster.title} {onhold} {onshare} /></div>
       {/if}
     {/if}
   </div>

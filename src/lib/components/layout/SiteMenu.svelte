@@ -5,25 +5,31 @@
   import { api } from '$convex/api';
   import IconButton from '$lib/components/ui/IconButton.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
+  import { track, type NavDestination } from '$lib/services/analytics';
 
   // Burger button with a dropdown of every page and past competitions' results.
   // Closes on navigation, Escape, or a click anywhere outside it.
 
+  /** A menu link, and where it goes as the analytics events name it. */
+  type Link = { href: string; label: string; destination: NavDestination; competition?: string };
+
   let open = $state(false);
   let root: HTMLElement;
 
-  const links = $derived([
-    { href: resolve('/'), label: i18n.t.menu.vote },
-    { href: resolve('/results'), label: i18n.t.menu.rankings },
-    { href: resolve('/about'), label: i18n.t.menu.about },
-    { href: resolve('/settings'), label: i18n.t.menu.settings }
+  const links: Link[] = $derived([
+    { href: resolve('/'), label: i18n.t.menu.vote, destination: 'vote' },
+    { href: resolve('/results'), label: i18n.t.menu.rankings, destination: 'rankings' },
+    { href: resolve('/about'), label: i18n.t.menu.about, destination: 'about' },
+    { href: resolve('/settings'), label: i18n.t.menu.settings, destination: 'settings' }
   ]);
 
   const archived = useQuery(api.competitions.archived, {});
-  const past = $derived(
+  const past: Link[] = $derived(
     (archived.data ?? []).map((c) => ({
       href: resolve('/results/[[competition]]', { competition: c.slug }),
-      label: c.title
+      label: c.title,
+      destination: 'past_results',
+      competition: c.slug
     }))
   );
 
@@ -39,9 +45,15 @@
 
 <svelte:window onpointerdown={onWindowPointer} onkeydown={(e) => e.key === 'Escape' && (open = false)} />
 
-{#snippet item(l: { href: string; label: string })}
+{#snippet item(l: Link)}
   <li>
-    <a href={l.href} aria-current={page.url.pathname === l.href ? 'page' : undefined}>{l.label}</a>
+    <a
+      href={l.href}
+      aria-current={page.url.pathname === l.href ? 'page' : undefined}
+      onclick={() =>
+        track('nav_link_clicked', { destination: l.destination, placement: 'menu', competition: l.competition })}
+      >{l.label}</a
+    >
   </li>
 {/snippet}
 

@@ -1,16 +1,22 @@
 <script lang="ts">
   import IconButton from '$lib/components/ui/IconButton.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
+  import { track } from '$lib/services/analytics';
   import { sound } from '$lib/services/sound.svelte';
 
   const t = $derived(i18n.t.header);
+
+  function toggle() {
+    sound.toggle();
+    track('sound_toggled', {});
+  }
 </script>
 
 <IconButton
   label={sound.muted ? t.unmuteLabel : t.muteLabel}
   pressed={sound.muted}
   muted={sound.muted}
-  onclick={() => sound.toggle()}
+  onclick={toggle}
 >
   <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
     <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" />

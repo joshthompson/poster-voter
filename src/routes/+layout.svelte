@@ -1,11 +1,13 @@
 <script lang="ts">
   import { PUBLIC_CONVEX_URL } from '$env/static/public';
   import { setupConvex } from 'convex-svelte';
+  import { afterNavigate } from '$app/navigation';
   import CoffeeButton from '$lib/components/layout/CoffeeButton.svelte';
   import PolkaDots from '$lib/components/layout/PolkaDots.svelte';
   import SetupNotice from '$lib/components/layout/SetupNotice.svelte';
   import SiteHeader from '$lib/components/layout/SiteHeader.svelte';
   import SiteShareButton from '$lib/features/share/SiteShareButton.svelte';
+  import { trackPageview } from '$lib/services/analytics';
   import { sound } from '$lib/services/sound.svelte';
   import '$lib/styles/index.css';
 
@@ -13,6 +15,12 @@
 
   const configured = Boolean(PUBLIC_CONVEX_URL);
   if (configured) setupConvex(PUBLIC_CONVEX_URL);
+
+  // The first page and every navigation after it. Opening a poster from the rankings changes the
+  // URL without navigating, so it isn't one (it's `poster_details_opened`).
+  afterNavigate(({ to }) =>
+    trackPageview({ route: to?.route.id ?? undefined, competition: to?.params?.competition })
+  );
 </script>
 
 <!-- Browsers only allow audio after a gesture, so the first click or key press starts it. -->

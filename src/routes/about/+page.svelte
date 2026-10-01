@@ -9,22 +9,30 @@
   import telegram from '$lib/assets/telegram.png';
   import www from '$lib/assets/www.png';
   import { i18n } from '$lib/i18n/index.svelte';
+  import { track } from '$lib/services/analytics';
 
   const t = $derived(i18n.t.about);
 
-  // The makers, each with their own profile links (in the same order as `t.people`).
+  // The makers, each with their own profile links (in the same order as `t.people`). `person` and
+  // `network` name them in the analytics events.
   const SOCIALS = [
-    [
-      { name: 'Instagram', icon: instagram, url: 'https://www.instagram.com/totally_sspiess/' },
-      { name: 'Substack', icon: substack, url: 'https://substack.com/@alisavasileva' },
-      { name: 'Telegram', icon: telegram, url: 'https://t.me/alisalisaw' }
-    ],
-    [
-      { name: 'Telegram', icon: telegram, url: 'https://t.me/joshshive' },
-      { name: 'Website', icon: www, url: 'https://joshthompson.github.io/toys/' }
-    ]
-  ];
-  const people = $derived(t.people.map((name, i) => ({ name, socials: SOCIALS[i] ?? [] })));
+    {
+      person: 'alisa',
+      links: [
+        { name: 'Instagram', network: 'instagram', icon: instagram, url: 'https://www.instagram.com/totally_sspiess/' },
+        { name: 'Substack', network: 'substack', icon: substack, url: 'https://substack.com/@alisavasileva' },
+        { name: 'Telegram', network: 'telegram', icon: telegram, url: 'https://t.me/alisalisaw' }
+      ]
+    },
+    {
+      person: 'josh',
+      links: [
+        { name: 'Telegram', network: 'telegram', icon: telegram, url: 'https://t.me/joshshive' },
+        { name: 'Website', network: 'website', icon: www, url: 'https://joshthompson.github.io/toys/' }
+      ]
+    }
+  ] as const;
+  const people = $derived(t.people.map((name, i) => ({ name, person: SOCIALS[i]?.person, socials: SOCIALS[i]?.links ?? [] })));
 </script>
 
 <svelte:head>
@@ -44,7 +52,15 @@
               <ul class="socials">
                 {#each person.socials as s (s.url)}
                   <li>
-                    <a class="social" href={s.url} target="_blank" rel="noopener">
+                    <a
+                      class="social"
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener"
+                      onclick={() =>
+                        person.person &&
+                        track('social_link_clicked', { person: person.person, network: s.network, url: s.url })}
+                    >
                       <img src={s.icon} alt="" />
                       {s.name}
                     </a>

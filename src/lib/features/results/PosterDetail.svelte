@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { ShareOutcome } from '$lib/features/share/share.svelte';
   import type { Segment } from '$lib/i18n/locales/en';
   import type { PosterInfo } from './hydrate';
   import PosterPanel from './PosterPanel.svelte';
@@ -12,6 +13,7 @@
     segment,
     posterById,
     shareHref,
+    onshare,
     onclose
   }: {
     poster: RankedPoster | null;
@@ -20,6 +22,8 @@
     posterById: Map<PosterInfo['_id'], PosterInfo>;
     /** The open poster's page, to share. */
     shareHref?: string;
+    /** How each share of it ended. */
+    onshare?: (outcome: ShareOutcome) => void;
     onclose: () => void;
   } = $props();
 
@@ -38,7 +42,7 @@
   onclick={(e) => e.target === dialog && dialog.close()}
 >
   {#if poster}
-    <PosterPanel {poster} {segment} {posterById} {shareHref} onclose={() => dialog.close()} />
+    <PosterPanel {poster} {segment} {posterById} {shareHref} {onshare} onclose={() => dialog.close()} />
   {/if}
 </dialog>
 

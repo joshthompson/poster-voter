@@ -17,5 +17,7 @@ export type PosterDetailData = ReturnType<typeof detail>;
 
 /** A link to a poster's own page, and what a click on it does instead (open it in the modal). */
 export type PosterLink = { href: string; onclick: (e: MouseEvent) => void };
-/** The link for any poster in the list. */
-export type LinkTo = (poster: { _id: RankedPoster['_id'] }) => PosterLink;
+/** Which part of the rankings a poster link is in. */
+export type LinkPlacement = 'podium' | 'leaderboard' | 'local_picks' | 'disagreements';
+/** The link for any poster in the list, from the part of the rankings it's in. */
+export type LinkTo = (poster: { _id: RankedPoster['_id'] }, placement: LinkPlacement) => PosterLink;

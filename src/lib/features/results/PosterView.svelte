@@ -6,6 +6,7 @@
   import Pill from '$lib/components/ui/Pill.svelte';
   import ShareButton from '$lib/features/share/ShareButton.svelte';
   import { i18n } from '$lib/i18n/index.svelte';
+  import { track } from '$lib/services/analytics';
   import { usePosters } from '$lib/services/posters.svelte';
   import { visibility } from '$lib/state/visibility.svelte';
   import Note from './Note.svelte';
@@ -62,7 +63,19 @@
     <PosterPanel {poster} segment="all" {posterById}>
       {#snippet links()}
         <Pill variant="ink" href={rankings}>{t.detail.allRankings}</Pill>
-        <ShareButton href={posterHref(slug, name)} title={poster.title} labelled />
+        <ShareButton
+          href={posterHref(slug, name)}
+          title={poster.title}
+          labelled
+          onshare={(outcome) =>
+            track('poster_shared', {
+              competition: slug,
+              poster_id: poster._id,
+              poster_title: poster.title,
+              placement: 'poster_page',
+              outcome
+            })}
+        />
       {/snippet}
     </PosterPanel>
   </article>
