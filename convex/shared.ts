@@ -7,9 +7,25 @@ import type { Id } from './_generated/dataModel';
 export type Segment = 'all' | 'designers' | 'others';
 export const SEGMENTS: Segment[] = ['all', 'designers', 'others'];
 
-/** Every poster starts here; the Elo K-factor sets how far one vote moves a rating. */
+/** Every poster starts here. */
 export const START_RATING = 1000;
-export const K = 32;
+
+/**
+ * The Elo K-factor: how far one vote moves a rating. It starts at K_MAX, so a new poster finds its
+ * level quickly, and falls to K_MIN over its first K_SETTLE_MATCHES, so established ratings stop
+ * bouncing on every vote (posters, unlike chess players, don't get better or worse).
+ */
+const K_MAX = 32;
+const K_MIN = 8;
+const K_SETTLE_MATCHES = 100;
+const kFor = (matches: number) => Math.max(K_MIN, K_MAX - ((K_MAX - K_MIN) * matches) / K_SETTLE_MATCHES);
+
+/**
+ * The K-factor for a vote between posters with these many matches so far. Both share it (the mean
+ * of their own), so the points the winner gains are the points the loser drops and the average
+ * rating stays at START_RATING.
+ */
+export const kFactor = (winnerMatches: number, loserMatches: number) => (kFor(winnerMatches) + kFor(loserMatches)) / 2;
 
 /** A city needs this many votes before it gets a local favourite. */
 export const LOCAL_MIN_VOTES = 5;

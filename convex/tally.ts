@@ -4,7 +4,7 @@ import { v } from 'convex/values';
 import type { Doc, Id, TableNames } from './_generated/dataModel';
 import type { WithOptionalSystemFields, WithoutSystemFields } from 'convex/server';
 import { getActive } from './competitions';
-import { HOUR_MS, K, LOCAL_MIN_VOTES, SEGMENTS, START_RATING, groupOf, orderPair, type Segment } from './shared';
+import { HOUR_MS, LOCAL_MIN_VOTES, SEGMENTS, START_RATING, groupOf, kFactor, orderPair, type Segment } from './shared';
 
 // The tally: everything the rankings show, worked out from the votes in the background.
 //
@@ -253,10 +253,12 @@ class Tally {
       const counts = this.counts[segment];
       counts.votes++;
 
-      // Elo, the same update chess uses: beating a stronger poster moves more points.
+      // Elo, the same update chess uses: beating a stronger poster moves more points, and votes
+      // move a poster less once it has played many matches (see kFactor).
       const w = winner[segment];
       const l = loser[segment];
-      const delta = K * (1 - 1 / (1 + 10 ** ((l.rating - w.rating) / 400)));
+      const k = kFactor(w.wins + w.losses, l.wins + l.losses);
+      const delta = k * (1 - 1 / (1 + 10 ** ((l.rating - w.rating) / 400)));
       w.rating += delta;
       w.wins++;
       l.rating -= delta;

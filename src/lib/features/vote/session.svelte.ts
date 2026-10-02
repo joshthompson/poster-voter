@@ -13,7 +13,7 @@ import type { Phase, Poster, VoteResult } from './types';
  */
 const ENTER_MS = 400;
 /** How long the revealed votes stay on screen before the next pair, unless paused. */
-export const REVEAL_MS = 4000;
+export const REVEAL_MS = 3000;
 const EXIT_MS = 700;
 
 type Source = {

@@ -12,9 +12,11 @@
   " ": {"advance":7,"height":0},
   "\u00a0": {"advance":7,"height":0},
   "!": {"advance":10,"height":28},
+  "\"": {"advance":13,"height":26},
   "#": {"advance":23,"height":25},
   "%": {"advance":26,"height":28},
   "&": {"advance":19,"height":25},
+  "'": {"advance":6,"height":26},
   "(": {"advance":9,"height":29},
   ")": {"advance":11,"height":29},
   "*": {"advance":11,"height":26},
@@ -158,5 +160,9 @@
   "ё": {"advance":17,"height":32},
   "Ё": {"advance":17,"height":32},
   "–": {"advance":11,"height":15},
-  "—": {"advance":11,"height":15}
+  "—": {"advance":11,"height":15},
+  "‘": {"advance":6,"height":26},
+  "’": {"advance":6,"height":26},
+  "“": {"advance":13,"height":26},
+  "”": {"advance":13,"height":26}
 }
