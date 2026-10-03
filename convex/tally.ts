@@ -3,13 +3,24 @@ import { internal } from './_generated/api';
 import { v } from 'convex/values';
 import type { Doc, Id, TableNames } from './_generated/dataModel';
 import type { WithOptionalSystemFields, WithoutSystemFields } from 'convex/server';
+import { bradleyTerry } from './bradleyTerry';
 import { getActive } from './competitions';
-import { HOUR_MS, LOCAL_MIN_VOTES, SEGMENTS, START_RATING, groupOf, kFactor, orderPair, type Segment } from './shared';
+import {
+  HOUR_MS,
+  LOCAL_MIN_VOTES,
+  RATING_SYSTEM,
+  SEGMENTS,
+  START_RATING,
+  groupOf,
+  kFactor,
+  orderPair,
+  type Segment
+} from './shared';
 
 // The tally: everything the rankings show, worked out from the votes in the background.
 //
 // Casting a vote only records it. A scheduled run of `run` then folds every vote since the last
-// run into the tallies (Elo standings, head-to-heads, voters, places, hourly counts) and rebuilds
+// run into the tallies (standings, head-to-heads, voters, places, hourly counts) and rebuilds
 // the snapshots the rankings page reads; `finish` then corrects the live counts and schedules the
 // next run if votes are waiting. Runs happen at most every REFRESH_MS while votes keep coming, so
 // the page's reads stay small and don't grow with the number of votes.
@@ -254,7 +265,8 @@ class Tally {
       counts.votes++;
 
       // Elo, the same update chess uses: beating a stronger poster moves more points, and votes
-      // move a poster less once it has played many matches (see kFactor).
+      // move a poster less once it has played many matches (see kFactor). Kept up to date whatever
+      // RATING_SYSTEM says, so switching back to it needs no recount.
       const w = winner[segment];
       const l = loser[segment];
       const k = kFactor(w.wins + w.losses, l.wins + l.losses);
@@ -444,9 +456,25 @@ class Tally {
     const active = new Set(standings.filter((s) => s.active).map((s) => s.posterId));
     const counts = this.counts[segment];
 
+    // Bradley-Terry is fitted afresh from every head-to-head, removed posters' included, as their
+    // votes still say something about the posters they met.
+    const fitted =
+      RATING_SYSTEM === 'bradley_terry'
+        ? bradleyTerry(
+            await db
+              .query('matchups')
+              .withIndex('by_close', (q) => q.eq('competitionId', competitionId).eq('segment', segment))
+              .collect()
+          )
+        : null;
     const scores = standings
       .filter((s) => s.active && s[segment].wins + s[segment].losses > 0)
-      .map((s) => ({ id: s.posterId, rating: Math.round(s[segment].rating), wins: s[segment].wins, losses: s[segment].losses }));
+      .map((s) => ({
+        id: s.posterId,
+        rating: Math.round(fitted ? (fitted.get(s.posterId) ?? START_RATING) : s[segment].rating),
+        wins: s[segment].wins,
+        losses: s[segment].losses
+      }));
 
     // The first contested pair of current posters, from each end of the ordering. A few candidates
     // cover pairs with a poster since removed.

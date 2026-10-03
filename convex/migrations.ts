@@ -60,3 +60,24 @@ export const tallyAll = internalMutation({
     return started;
   }
 });
+
+/**
+ * Rebuild every tallied competition's snapshots from its tallies, without recounting: e.g. after
+ * changing RATING_SYSTEM. The rankings switch over within a minute or so.
+ */
+export const refreshSnapshots = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const refreshed = [];
+    for (const c of await ctx.db.query('competitions').collect()) {
+      const progress = await ctx.db
+        .query('progress')
+        .withIndex('by_competition', (q) => q.eq('competitionId', c._id))
+        .unique();
+      if (!progress) continue;
+      await requestRun(ctx, c._id, { progress, now: true, stale: true });
+      refreshed.push(c.title);
+    }
+    return refreshed;
+  }
+});

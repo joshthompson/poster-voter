@@ -7,6 +7,15 @@ import type { Id } from './_generated/dataModel';
 export type Segment = 'all' | 'designers' | 'others';
 export const SEGMENTS: Segment[] = ['all', 'designers', 'others'];
 
+/**
+ * How the rankings rate posters. Change it, deploy, then run `migrations:refreshSnapshots` to
+ * re-rate the current rankings (no recount needed: the tally keeps what both systems need).
+ * - 'bradley_terry': fitted to every vote so far at once (see bradleyTerry.ts); vote order doesn't matter.
+ * - 'elo': updated one vote at a time, as chess does (see kFactor).
+ */
+export type RatingSystem = 'bradley_terry' | 'elo';
+export const RATING_SYSTEM: RatingSystem = 'bradley_terry';
+
 /** Every poster starts here. */
 export const START_RATING = 1000;
 

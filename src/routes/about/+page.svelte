@@ -14,8 +14,11 @@
   import remiPop from '$lib/assets/fonts/remi-pop.ttf';
   import { i18n } from '$lib/i18n/index.svelte';
   import { track } from '$lib/services/analytics';
+  import { RATING_SYSTEM } from '$shared';
 
   const t = $derived(i18n.t.about);
+  // How the rankings work, for whichever system rates the posters.
+  const rankings = $derived(RATING_SYSTEM === 'elo' ? t.elo : t.bradleyTerry);
 
   // The makers, each with their own profile links (in the same order as `t.people`). `person` and
   // `network` name them in the analytics events.
@@ -80,10 +83,10 @@
       <CoffeeButton full />
     </Card>
     <Card delay={0.3}>
-      <h2>{t.elo.title}</h2>
+      <h2>{rankings.title}</h2>
       <div class="body">
-        {#each t.elo.body as paragraph (paragraph)}<p>{paragraph}</p>{/each}
-        <p>{t.elo.more[0]}<a href={t.elo.url} target="_blank" rel="noopener">{t.elo.more[1]}</a>{t.elo.more[2]}</p>
+        {#each rankings.body as paragraph (paragraph)}<p>{paragraph}</p>{/each}
+        <p>{rankings.more[0]}<a href={rankings.url} target="_blank" rel="noopener">{rankings.more[1]}</a>{rankings.more[2]}</p>
       </div>
     </Card>
     <Card delay={0.45}>

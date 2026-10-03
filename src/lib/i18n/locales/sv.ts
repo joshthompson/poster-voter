@@ -147,6 +147,16 @@ export const sv: Messages = {
       more: ['Läs mer om ', 'Elo-rating', ' på Wikipedia.'],
       url: 'https://sv.wikipedia.org/wiki/Elo-rating'
     },
+    bradleyTerry: {
+      title: 'Så funkar topplistan',
+      body: [
+        'Affischerna rankas med Bradley–Terry-modellen, ett vanligt sätt att ranka saker utifrån dueller. Den tittar på alla röster hittills på en gång och räknar fram de poäng som bäst förklarar vem som slog vem.',
+        'Att slå en stark affisch väger alltså tyngre än att slå en svag, och ordningen rösterna kom i spelar ingen roll. Varje affisch börjar runt 1000 poäng, och det krävs en rad röster för att komma långt därifrån.',
+        'Poängen funkar som schackrating: en affisch som ligger 100 poäng före väntas vinna ungefär 64 % av gångerna, och en som ligger 400 poäng före ungefär 91 %. Några poängs skillnad är i praktiken oavgjort.'
+      ],
+      more: ['Läs mer om ', 'Bradley–Terry-modellen', ' på Wikipedia (på engelska).'],
+      url: 'https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model'
+    },
     font: {
       title: 'Vårt typsnitt',
       made: ['Vi gjorde ett typsnitt som heter ', 'Remi Pop', ' för ', 'Poster Vote!', ' för att ge projektet en unik och lekfull känsla.'],

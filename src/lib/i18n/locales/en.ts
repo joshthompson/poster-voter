@@ -152,6 +152,17 @@ export const en = {
       more: ['Read more about the ', 'Elo rating system', ' on Wikipedia.'],
       url: 'https://en.wikipedia.org/wiki/Elo_rating_system'
     },
+    bradleyTerry: {
+      title: 'How the rankings work',
+      body: [
+        'Posters are ranked with the Bradley–Terry model, a standard way to rank things from head-to-head contests. It looks at every vote cast so far, all at once, and works out the scores that best explain who beat whom.',
+        'So beating a strong poster counts for more than beating a weak one, and the order the votes came in doesn’t matter. Every poster starts near 1000 points, and it takes a run of votes to move far from it.',
+        'Scores work like chess ratings: a poster 100 points ahead is expected to win about 64% of the time, and one 400 points ahead about 91%. A gap of a few points is basically a tie.'
+      ],
+      // [before, link text, after]
+      more: ['Read more about the ', 'Bradley–Terry model', ' on Wikipedia.'],
+      url: 'https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model'
+    },
     font: {
       title: 'Our Font',
       // Every other piece, from the second, is set in Remi Pop.

@@ -1,6 +1,6 @@
 # Poster Vote
 
-Two posters fly out, you pick your favourite, and then you see how everyone else voted on that pair. The votes feed an Elo rating for each poster, and `/results` shows the rankings.
+Two posters fly out, you pick your favourite, and then you see how everyone else voted on that pair. The votes feed a rating for each poster (Bradley–Terry, or Elo: see `RATING_SYSTEM` in `convex/shared.ts`), and `/results` shows the rankings.
 
 - **Frontend:** SvelteKit (Svelte 5), static build for GitHub Pages
 - **Backend:** Convex (`convex/`)
@@ -85,7 +85,7 @@ Note: `pnpm deploy` is a built-in pnpm command, so the full release script is ca
 
 ## How the rankings are counted
 
-Casting a vote only records it (`votes.cast`) and bumps a small live counter. A background job, `tally.run` in `convex/tally.ts`, then processes each vote once. It updates the Elo standings, head-to-heads, voters, places and hourly counts, and rebuilds one compact snapshot per voter group. It runs a minute after the first vote following a quiet spell, and then at most every 15 minutes while votes keep coming, so the rankings are never more than 15 minutes behind. The rankings page reads those snapshots and the live counter, never the votes themselves, so its cost stays flat as votes pile up. Pages keep the poster list in localStorage with a version stamp, and the server only sends it again when a sync changes it. This keeps the app well inside Convex's free tier.
+Casting a vote only records it (`votes.cast`) and bumps a small live counter. A background job, `tally.run` in `convex/tally.ts`, then processes each vote once. It updates the standings (wins, losses and an Elo rating), head-to-heads, voters, places and hourly counts, and rebuilds one compact snapshot per voter group, rating the posters with `RATING_SYSTEM`: Elo's running rating, or a Bradley–Terry fit to every head-to-head (`convex/bradleyTerry.ts`). It runs a minute after the first vote following a quiet spell, and then at most every 15 minutes while votes keep coming, so the rankings are never more than 15 minutes behind. The rankings page reads those snapshots and the live counter, never the votes themselves, so its cost stays flat as votes pile up. Pages keep the poster list in localStorage with a version stamp, and the server only sends it again when a sync changes it. This keeps the app well inside Convex's free tier.
 
 After a normal deploy nothing needs running: the first vote, or the hourly check in `convex/crons.ts`, starts the tally. For maintenance (add `--prod` for production):
 
@@ -94,6 +94,7 @@ After a normal deploy nothing needs running: the first vote, or the hourly check
 | `npx convex run migrations:rebuild`                           | Recount every competition from its votes (the old rankings show until done)  |
 | `npx convex run posters:merge '{"competition":"<slug>","keepKey":"060.jpg","dropKey":"061.jpg"}'` | Fold a duplicate poster into another, then recount                      |
 | `npx convex run posters:remove '{"competition":"<slug>","keys":["069.jpg"]}'` | Take posters out and delete every vote they were in, then recount. Delete their files from `posters/` too, or the next sync brings them back |
+| `npx convex run migrations:refreshSnapshots`                 | Rebuild every competition's rankings without recounting, e.g. after changing `RATING_SYSTEM` |
 | `npx convex run migrations:tallyAll`                          | Start the tally for competitions that have never had one (e.g. old archives) |
 | `npx convex run migrations:cleanupLegacy`                     | Remove scores stored the old way (on posters and in `pairs`)                 |
 
