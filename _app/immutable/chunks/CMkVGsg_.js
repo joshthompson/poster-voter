@@ -1,0 +1,1 @@
+var e=`bradley_terry`,t=1e3,n=36e5;export{e as n,t as r,n as t};
