@@ -20,12 +20,16 @@
   "(": {"advance":9,"height":29},
   ")": {"advance":11,"height":29},
   "*": {"advance":11,"height":26},
+  "+": {"advance":14,"height":20},
   ",": {"advance":9,"height":8},
   "-": {"advance":11,"height":15},
   ".": {"advance":9,"height":7},
   "/": {"advance":14,"height":26},
   ":": {"advance":6,"height":17},
   ";": {"advance":7,"height":19},
+  "<": {"advance":13,"height":20},
+  "=": {"advance":16,"height":20},
+  ">": {"advance":13,"height":20},
   "?": {"advance":17,"height":32},
   "@": {"advance":21,"height":24},
   "[": {"advance":11,"height":28},
@@ -164,5 +168,8 @@
   "‘": {"advance":6,"height":26},
   "’": {"advance":6,"height":26},
   "“": {"advance":13,"height":26},
-  "”": {"advance":13,"height":26}
+  "”": {"advance":13,"height":26},
+  "−": {"advance":12,"height":15},
+  "≤": {"advance":16,"height":22},
+  "≥": {"advance":18,"height":23}
 }

@@ -67,7 +67,14 @@ const NAMED = {
   brace_right: '}',
   dash_hyphen: '-',
   dash_en: '–',
-  dash_em: '—'
+  dash_em: '—',
+  plus: '+',
+  minus: '−',
+  equals: '=',
+  less_than: '<',
+  greater_than: '>',
+  less_than_or_equal_to: '≤',
+  greater_than_or_equal_to: '≥'
 };
 
 async function readDrawings() {
